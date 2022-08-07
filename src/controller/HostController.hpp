@@ -27,6 +27,8 @@
 #ifndef Helicopter_controller_HostController_hpp
 #define Helicopter_controller_HostController_hpp
 
+#include "Constants.hpp"
+
 #include "oatpp-websocket/Handshaker.hpp"
 
 #include "oatpp/web/server/api/ApiController.hpp"
@@ -52,21 +54,23 @@ public:
   /**
    * Create new host
    */
-  ENDPOINT_ASYNC("GET", "api/create-game/{hostId}/", WS) {
+  ENDPOINT_ASYNC("GET", "api/create-game/*", WS) {
 
     ENDPOINT_ASYNC_INIT(WS)
 
     Action act() override {
 
-      auto hostId = request->getPathVariable("hostId");
+      auto gameId = request->getQueryParameter(Constants::PARAM_GAME_ID);
+
+      OATPP_ASSERT_HTTP(gameId, Status::CODE_400, oatpp::String("Please specify '") + Constants::PARAM_GAME_ID +  "' query parameter")
 
       /* Websocket handshake */
       auto response = oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), controller->websocketConnectionHandler);
 
       auto parameters = std::make_shared<oatpp::network::ConnectionHandler::ParameterMap>();
 
-      (*parameters)["type"] = "host";
-      (*parameters)["hostId"] = hostId;
+      (*parameters)[Constants::PARAM_PEER_TYPE] = Constants::PARAM_PEER_TYPE_HOST;
+      (*parameters)[Constants::PARAM_GAME_ID] = gameId;
 
       /* Set connection upgrade params */
       response->setConnectionUpgradeParameters(parameters);
