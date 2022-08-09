@@ -32,22 +32,151 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
+/**
+ * host <--> server <--> client
+ * message codes.
+ * - 0..99 general messages
+ * - 100 - 199 outgoing host messages
+ * - 200 - 299 incoming host messages
+ * - 300 - 399 outgoing client messages
+ * - 400 - 499 incoming client messages
+ */
 ENUM(MessageCodes, v_int32,
-  VALUE(CODE_INFO, 0),
 
-  VALUE(CODE_PEER_JOINED, 1),
-  VALUE(CODE_PEER_LEFT, 2),
-  VALUE(CODE_PEER_MESSAGE, 3),
-  VALUE(CODE_PEER_MESSAGE_FILE, 4),
-  VALUE(CODE_PEER_IS_TYPING, 5),
+///////////////////////////////////////////////////////////////////
+//// 0..99 general messages
 
-  VALUE(CODE_FILE_SHARE, 6),
-  VALUE(CODE_FILE_REQUEST_CHUNK, 7),
-  VALUE(CODE_FILE_CHUNK_DATA, 8),
+     /**
+      * Server sends ping message to peer.
+      */
+     VALUE(OUTGOING_PING, 0),
 
-  VALUE(CODE_API_ERROR, 9)
+     /**
+      * Peer responds to server with ping message.
+      */
+     VALUE(INCOMING_PING, 1),
+
+     /**
+      * Server notifies peers that new host has been elected.
+      */
+     VALUE(OUTGOING_NEW_HOST, 2),
+
+     /**
+      * Server sends message to peer.
+      */
+     VALUE(OUTGOING_MESSAGE, 3),
+
+     /**
+      * Peer broadcasts message to all clients.
+      */
+     VALUE(INCOMING_BROADCAST, 4),
+
+     /**
+      * Peer sends message to a client or to a group of clients.
+      */
+     VALUE(INCOMING_DIRECT_MESSAGE, 5),
+
+///////////////////////////////////////////////////////////////////
+//// 100 - 199 outgoing host messages
+
+     /**
+      * Sent to a peer once connected as a game host.
+      * Also sent to a peer when it was elected as a new host.
+      */
+     VALUE(OUTGOING_HOST_HELLO, 100),
+
+     /**
+      * Sent to host when new client joined the game.
+      */
+     VALUE(OUTGOING_HOST_CLIENT_JOINED, 101),
+
+     /**
+      * Sent to host when client left the game.
+      */
+     VALUE(OUTGOING_HOST_CLIENT_LEFT, 102),
+
+///////////////////////////////////////////////////////////////////
+//// 200 - 299 incoming host messages
+
+     /**
+      * Host sends to server to kick client or a group of clients.
+      */
+     VALUE(INCOMING_HOST_KICK_CLIENTS, 200),
+
+///////////////////////////////////////////////////////////////////
+//// 300 - 399 outgoing client messages
+
+     /**
+      * Sent to a peer once connected and joined the game.
+      */
+     VALUE(OUTGOING_CLIENT_HELLO, 300),
+
+///////////////////////////////////////////////////////////////////
+//// 400 - 499 incoming client messages
+
+     /**
+      * Client sends direct message to host.
+      */
+     VALUE(INCOMING_CLIENT_MESSAGE, 400)
+
 );
 
+/**
+ * Direct message
+ */
+class DirectMessageDto : public oatpp::DTO {
+
+  DTO_INIT(DirectMessageDto, DTO)
+
+  /**
+   * PeerIds of recipients
+   */
+  DTO_FIELD(Vector<Int64>, peerIds) = {};
+
+  /**
+   * Message data
+   */
+  DTO_FIELD(String, data);
+
+};
+
+/**
+ * Message
+ */
+class MessageDto : public oatpp::DTO {
+
+  DTO_INIT(MessageDto, DTO)
+
+  /**
+   * Message code
+   */
+  DTO_FIELD(oatpp::Enum<MessageCodes>::AsNumber::NotNull, code);
+
+  /**
+   * Message payload
+   */
+  DTO_FIELD(oatpp::Any, payload);
+
+  DTO_FIELD_TYPE_SELECTOR(payload) {
+
+    if(!code) return Void::Class::getType();
+
+    switch (*code) {
+      case MessageCodes::INCOMING_BROADCAST:
+        return oatpp::String::Class::getType();
+
+      case MessageCodes::INCOMING_DIRECT_MESSAGE:
+        return oatpp::Object<DirectMessageDto>::Class::getType();
+
+
+      default:
+        throw std::runtime_error("not implemented");
+
+    }
+
+  }
+
+};
 
 
 #include OATPP_CODEGEN_END(DTO)
