@@ -57,24 +57,29 @@ ENUM(MessageCodes, v_int32,
      VALUE(INCOMING_PING, 1),
 
      /**
+      * Sent to peer to indicate operation error.
+      */
+     VALUE(OUTGOING_ERROR, 2),
+
+     /**
       * Server notifies peers that new host has been elected.
       */
-     VALUE(OUTGOING_NEW_HOST, 2),
+     VALUE(OUTGOING_NEW_HOST, 3),
 
      /**
       * Server sends message to peer.
       */
-     VALUE(OUTGOING_MESSAGE, 3),
+     VALUE(OUTGOING_MESSAGE, 4),
 
      /**
       * Peer broadcasts message to all clients.
       */
-     VALUE(INCOMING_BROADCAST, 4),
+     VALUE(INCOMING_BROADCAST, 5),
 
      /**
       * Peer sends message to a client or to a group of clients.
       */
-     VALUE(INCOMING_DIRECT_MESSAGE, 5),
+     VALUE(INCOMING_DIRECT_MESSAGE, 6),
 
 ///////////////////////////////////////////////////////////////////
 //// 100 - 199 outgoing host messages
@@ -122,6 +127,37 @@ ENUM(MessageCodes, v_int32,
 );
 
 /**
+ * Error codes.
+ */
+ENUM(ErrorCodes, v_int32,
+
+     /**
+      * Operation not permitted.
+      */
+     VALUE(OPERATION_NOT_PERMITTED, 0)
+
+);
+
+/**
+ * Direct message
+ */
+class ErrorDto : public oatpp::DTO {
+
+  DTO_INIT(ErrorDto, DTO)
+
+  /**
+   * Error code
+   */
+  DTO_FIELD(Enum<ErrorCodes>::AsNumber::NotNull, code);
+
+  /**
+   * Error text message
+   */
+  DTO_FIELD(String, message);
+
+};
+
+/**
  * Direct message
  */
 class DirectMessageDto : public oatpp::DTO {
@@ -150,7 +186,12 @@ class MessageDto : public oatpp::DTO {
   /**
    * Message code
    */
-  DTO_FIELD(oatpp::Enum<MessageCodes>::AsNumber::NotNull, code);
+  DTO_FIELD(Enum<MessageCodes>::AsNumber::NotNull, code);
+
+  /**
+   * Operation Correlation ID
+   */
+  DTO_FIELD(oatpp::String, ocid);
 
   /**
    * Message payload
@@ -162,6 +203,10 @@ class MessageDto : public oatpp::DTO {
     if(!code) return Void::Class::getType();
 
     switch (*code) {
+
+      case MessageCodes::OUTGOING_ERROR:
+        return oatpp::Object<ErrorDto>::Class::getType();
+
       case MessageCodes::INCOMING_BROADCAST:
         return oatpp::String::Class::getType();
 
