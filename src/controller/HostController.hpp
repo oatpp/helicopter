@@ -28,6 +28,7 @@
 #define Helicopter_controller_HostController_hpp
 
 #include "Constants.hpp"
+#include "games/Registry.hpp"
 
 #include "oatpp-websocket/Handshaker.hpp"
 
@@ -44,9 +45,9 @@ class HostController : public oatpp::web::server::api::ApiController {
 private:
   typedef HostController __ControllerType;
 private:
-  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler, "websocket");
+  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler, Constants::COMPONENT_WS_API);
 public:
-  HostController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
+  HostController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper, Constants::COMPONENT_REST_API))
     : oatpp::web::server::api::ApiController(objectMapper)
   {}
 public:
@@ -61,12 +62,10 @@ public:
     Action act() override {
 
       auto gameId = request->getQueryParameter(Constants::PARAM_GAME_ID);
-
       OATPP_ASSERT_HTTP(gameId, Status::CODE_400, oatpp::String("Please specify '") + Constants::PARAM_GAME_ID +  "' query parameter")
 
       /* Websocket handshake */
       auto response = oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), controller->websocketConnectionHandler);
-
       auto parameters = std::make_shared<oatpp::network::ConnectionHandler::ParameterMap>();
 
       (*parameters)[Constants::PARAM_PEER_TYPE] = Constants::PARAM_PEER_TYPE_HOST;

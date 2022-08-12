@@ -44,9 +44,9 @@ class ClientController : public oatpp::web::server::api::ApiController {
 private:
   typedef ClientController __ControllerType;
 private:
-  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler, "websocket");
+  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler, Constants::COMPONENT_WS_API);
 public:
-  ClientController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
+  ClientController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper, Constants::COMPONENT_REST_API))
     : oatpp::web::server::api::ApiController(objectMapper)
   {}
 public:

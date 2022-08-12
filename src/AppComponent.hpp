@@ -29,6 +29,8 @@
 
 #include "dto/Config.hpp"
 
+#include "games/Registry.hpp"
+
 #include "oatpp-openssl/server/ConnectionProvider.hpp"
 #include "oatpp-websocket/AsyncConnectionHandler.hpp"
 
@@ -146,7 +148,7 @@ public:
   /**
    *  Create ConnectionHandler component which uses Router component to route requests
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, serverConnectionHandler)("http", [] {
+  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, serverConnectionHandler)(Constants::COMPONENT_REST_API, [] {
     OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router); // get Router component
     OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, executor); // get Async executor component
     return oatpp::web::server::AsyncHttpConnectionHandler::createShared(router, executor);
@@ -155,7 +157,16 @@ public:
   /**
    *  Create ObjectMapper component to serialize/deserialize DTOs in Contoller's API
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, apiObjectMapper)([] {
+  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, apiObjectMapper)(Constants::COMPONENT_REST_API,[] {
+    auto mapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+    mapper->getSerializer()->getConfig()->includeNullFields = false;
+    return mapper;
+  }());
+
+  /**
+   *  Create ObjectMapper component to serialize/deserialize DTOs in Contoller's API
+   */
+  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, wsApiObjectMapper)(Constants::COMPONENT_WS_API,[] {
     auto mapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
     mapper->getSerializer()->getConfig()->includeNullFields = false;
     return mapper;
@@ -164,18 +175,18 @@ public:
   /**
    *  Create chat lobby component.
    */
-//  OATPP_CREATE_COMPONENT(std::shared_ptr<Lobby>, lobby)([] {
-//    return std::make_shared<Lobby>();
-//  }());
+  OATPP_CREATE_COMPONENT(std::shared_ptr<Registry>, lobby)([] {
+    return std::make_shared<Registry>();
+  }());
 
   /**
    *  Create websocket connection handler
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler)("websocket", [] {
+  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler)(Constants::COMPONENT_WS_API, [] {
     OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, executor);
-    //OATPP_COMPONENT(std::shared_ptr<Lobby>, lobby);
+    OATPP_COMPONENT(std::shared_ptr<Registry>, registry);
     auto connectionHandler = oatpp::websocket::AsyncConnectionHandler::createShared(executor);
-    //connectionHandler->setSocketInstanceListener(lobby);
+    connectionHandler->setSocketInstanceListener(registry);
     return connectionHandler;
   }());
 

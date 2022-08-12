@@ -31,11 +31,52 @@
 Registry::Registry()
 {}
 
+void Registry::sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socket, const oatpp::Object<ErrorDto>& error, bool fatal) {
+
+  class SendErrorCoroutine : public oatpp::async::Coroutine<SendErrorCoroutine> {
+  private:
+    std::shared_ptr<AsyncWebSocket> m_websocket;
+    oatpp::String m_message;
+    bool m_fatal;
+  public:
+
+    SendErrorCoroutine(const std::shared_ptr<AsyncWebSocket>& websocket,
+                       const oatpp::String& message,
+                       bool fatal)
+            : m_websocket(websocket)
+            , m_message(message)
+            , m_fatal(fatal)
+    {}
+
+    Action act() override {
+
+      /* synchronized async pipeline */
+      auto call = m_websocket->sendOneFrameTextAsync(m_message);
+
+      if(m_fatal) {
+        return call
+                .next(m_websocket->sendCloseAsync())
+                .next(new oatpp::async::Error("API Error"));
+      }
+
+      return call.next(finish());
+
+    }
+
+  };
+
+  auto message = MessageDto::createShared();
+  message->code = MessageCodes::OUTGOING_ERROR;
+  message->payload = error;
+
+  m_asyncExecutor->execute<SendErrorCoroutine>(socket, m_objectMapper->writeToString(message), fatal);
+
+}
+
 std::shared_ptr<Game> Registry::createGame(const oatpp::String& gameId) {
-  std::lock_guard<std::mutex> lock(m_gamesMutex);
   auto it = m_games.find(gameId);
   if(it != m_games.end()) {
-    return nullptr; // Won't create new game - such game already exists.
+    throw std::runtime_error("Game with such ID already exists. Can't create new game.");
   }
   auto game = std::make_shared<Game>(gameId);
   m_games.insert({gameId, game});
@@ -43,7 +84,6 @@ std::shared_ptr<Game> Registry::createGame(const oatpp::String& gameId) {
 }
 
 std::shared_ptr<Game> Registry::getGame(const oatpp::String& gameId) {
-  std::lock_guard<std::mutex> lock(m_gamesMutex);
   auto it = m_games.find(gameId);
   if(it != m_games.end()) {
     return it->second;
@@ -52,39 +92,65 @@ std::shared_ptr<Game> Registry::getGame(const oatpp::String& gameId) {
 }
 
 void Registry::deleteGame(const oatpp::String& gameId) {
-  std::lock_guard<std::mutex> lock(m_gamesMutex);
   m_games.erase(gameId);
+}
+
+std::mutex& Registry::getRegistryMutex() {
+  return m_mutex;
 }
 
 void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& socket, const std::shared_ptr<const ParameterMap>& params) {
 
+  OATPP_LOGD("Registry", "socket created - %d", socket.get())
+
   auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
   auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
 
+  bool isHostPeer = peerType == Constants::PARAM_PEER_TYPE_HOST;
   std::shared_ptr<Game> game;
-  bool isHostPeer = false;
-  if(peerType == Constants::PARAM_PEER_TYPE_HOST) {
-    game = createGame(gameId);
-    isHostPeer = true;
-  } else if(peerType == Constants::PARAM_PEER_TYPE_CLIENT) {
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
     game = getGame(gameId);
+    if(isHostPeer) {
+      if(game) {
+        sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Game with such ID already exists. Can't create game."),true);
+        return;
+      } else {
+        game = createGame(gameId);
+        OATPP_LOGD("Registry", "Game created - %d", game.get())
+      }
+    }
   }
 
   auto peer = std::make_shared<Peer>(socket, game, 0, isHostPeer);
   socket->setListener(peer);
 
+  game->addPeer(peer);
+  if(isHostPeer) game->setHost(peer);
+
+  OATPP_LOGD("Registry", "peer created for socket - %d", socket.get())
+
 }
 
 void Registry::onBeforeDestroy_NonBlocking(const std::shared_ptr<AsyncWebSocket>& socket) {
 
+  OATPP_LOGD("Registry", "destroying socket - %d", socket.get())
+
   auto peer = std::static_pointer_cast<Peer>(socket->getListener());
-  auto game = peer->getGame();
+  if(peer) {
 
-  game->removePeerById(peer->getPeerId());
-  peer->invalidateSocket();
+    auto game = peer->getGame();
 
-  if(game->isEmpty()) {
-    deleteGame(game->getId());
+    game->removePeerById(peer->getPeerId());
+    peer->invalidateSocket();
+
+    if (game->isEmpty()) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      deleteGame(game->getId());
+      OATPP_LOGD("Registry", "Game deleted - %d", game.get())
+    }
+  } else {
+    socket->getConnection().invalidate();
   }
 
 }

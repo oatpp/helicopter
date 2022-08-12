@@ -36,18 +36,45 @@
 
 
 class Registry : public oatpp::websocket::AsyncConnectionHandler::SocketInstanceListener {
-public:
+private:
   std::unordered_map<oatpp::String, std::shared_ptr<Game>> m_games;
-  std::mutex m_gamesMutex;
+  std::mutex m_mutex;
+private:
+  /* Inject application components */
+  OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
+  OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, m_objectMapper, Constants::COMPONENT_WS_API);
+private:
+  void sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socket, const oatpp::Object<ErrorDto>& error, bool fatal = false);
 public:
 
   Registry();
 
+  /**
+   * NOT thread-safe
+   * @param gameId
+   * @return
+   */
   std::shared_ptr<Game> createGame(const oatpp::String& gameId);
 
+  /**
+   * NOT thread-safe
+   * @param gameId
+   * @return
+   */
   std::shared_ptr<Game> getGame(const oatpp::String& gameId);
 
+
+  /**
+   * NOT thread-safe
+   * @param gameId
+   */
   void deleteGame(const oatpp::String& gameId);
+
+  /**
+   * Get registry mutex
+   * @return
+   */
+  std::mutex& getRegistryMutex();
 
 public:
 

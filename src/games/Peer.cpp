@@ -69,6 +69,51 @@ void Peer::sendMessageAsync(const oatpp::String& message) {
 
 }
 
+oatpp::async::CoroutineStarter Peer::sendErrorAsync(const oatpp::Object<ErrorDto>& error, bool fatal) {
+
+  class SendErrorCoroutine : public oatpp::async::Coroutine<SendErrorCoroutine> {
+  private:
+    oatpp::async::Lock* m_lock;
+    std::shared_ptr<AsyncWebSocket> m_websocket;
+    oatpp::String m_message;
+    bool m_fatal;
+  public:
+
+    SendErrorCoroutine(oatpp::async::Lock* lock,
+                       const std::shared_ptr<AsyncWebSocket>& websocket,
+                       const oatpp::String& message,
+                       bool fatal)
+            : m_lock(lock)
+            , m_websocket(websocket)
+            , m_message(message)
+            , m_fatal(fatal)
+    {}
+
+    Action act() override {
+
+      /* synchronized async pipeline */
+      auto call = oatpp::async::synchronize(m_lock,m_websocket->sendOneFrameTextAsync(m_message));
+
+      if(m_fatal) {
+        return call
+               .next(m_websocket->sendCloseAsync())
+               .next(new oatpp::async::Error("API Error"));
+      }
+
+      return call.next(finish());
+
+    }
+
+  };
+
+  auto message = MessageDto::createShared();
+  message->code = MessageCodes::OUTGOING_ERROR;
+  message->payload = error;
+
+  return SendErrorCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message), fatal);
+
+}
+
 std::shared_ptr<Game> Peer::getGame() {
   return m_game;
 }

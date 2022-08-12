@@ -155,6 +155,15 @@ class ErrorDto : public oatpp::DTO {
    */
   DTO_FIELD(String, message);
 
+public:
+
+  ErrorDto() = default;
+
+  ErrorDto(const Enum<ErrorCodes>::AsNumber& pCode, const String pMessage)
+    : code(pCode)
+    , message(pMessage)
+  {}
+
 };
 
 /**

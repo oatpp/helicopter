@@ -27,6 +27,8 @@
 #ifndef Helicopter_games_Peer_hpp
 #define Helicopter_games_Peer_hpp
 
+#include "Constants.hpp"
+
 #include "dto/DTOs.hpp"
 #include "dto/Config.hpp"
 
@@ -63,6 +65,7 @@ private:
 
   /* Inject application components */
   OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
+  OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, m_objectMapper, Constants::COMPONENT_WS_API);
 
 public:
 
@@ -76,6 +79,13 @@ public:
    * @param message
    */
   void sendMessageAsync(const oatpp::String& message);
+
+  /**
+   * Send error message to peer.
+   * @param error
+   * @param fatal
+   */
+  oatpp::async::CoroutineStarter sendErrorAsync(const oatpp::Object<ErrorDto>& error, bool fatal = false);
 
   /**
    * Get game the peer associated with.

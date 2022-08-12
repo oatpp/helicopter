@@ -30,6 +30,11 @@
 class Constants {
 public:
 
+  static constexpr const char* COMPONENT_REST_API = "REST_API";
+  static constexpr const char* COMPONENT_WS_API = "WS_API";
+
+public:
+
   static constexpr const char* PARAM_GAME_ID = "gameId";
   static constexpr const char* PARAM_PEER_TYPE = "peerType";
   static constexpr const char* PARAM_PEER_TYPE_HOST = "host";

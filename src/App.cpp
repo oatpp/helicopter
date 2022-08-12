@@ -44,7 +44,7 @@ void run(const oatpp::base::CommandLineArguments& args) {
   router->addController(std::make_shared<HostController>());
 
   /* Get connection handler component */
-  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler, "http");
+  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler, Constants::COMPONENT_REST_API);
 
   /* Get connection provider component */
   OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, connectionProvider);
