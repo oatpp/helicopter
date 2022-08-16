@@ -28,7 +28,6 @@
 #define Helicopter_controller_HostController_hpp
 
 #include "Constants.hpp"
-#include "games/Registry.hpp"
 
 #include "oatpp-websocket/Handshaker.hpp"
 
@@ -61,15 +60,15 @@ public:
 
     Action act() override {
 
-      auto gameId = request->getQueryParameter(Constants::PARAM_GAME_ID);
-      OATPP_ASSERT_HTTP(gameId, Status::CODE_400, oatpp::String("Please specify '") + Constants::PARAM_GAME_ID +  "' query parameter")
+      auto sessionId = request->getQueryParameter(Constants::PARAM_GAME_SESSION_ID);
+      OATPP_ASSERT_HTTP(sessionId, Status::CODE_400, oatpp::String("Please specify '") + Constants::PARAM_GAME_SESSION_ID +  "' query parameter")
 
       /* Websocket handshake */
       auto response = oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), controller->websocketConnectionHandler);
       auto parameters = std::make_shared<oatpp::network::ConnectionHandler::ParameterMap>();
 
       (*parameters)[Constants::PARAM_PEER_TYPE] = Constants::PARAM_PEER_TYPE_HOST;
-      (*parameters)[Constants::PARAM_GAME_ID] = gameId;
+      (*parameters)[Constants::PARAM_GAME_SESSION_ID] = sessionId;
 
       /* Set connection upgrade params */
       response->setConnectionUpgradeParameters(parameters);

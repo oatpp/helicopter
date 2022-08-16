@@ -24,10 +24,10 @@
  *
  ***************************************************************************/
 
-#ifndef Helicopter_games_Registry_hpp
-#define Helicopter_games_Registry_hpp
+#ifndef Helicopter_game_Registry_hpp
+#define Helicopter_game_Registry_hpp
 
-#include "./Game.hpp"
+#include "./Session.hpp"
 
 #include "oatpp-websocket/AsyncConnectionHandler.hpp"
 
@@ -37,7 +37,7 @@
 
 class Registry : public oatpp::websocket::AsyncConnectionHandler::SocketInstanceListener {
 private:
-  std::unordered_map<oatpp::String, std::shared_ptr<Game>> m_games;
+  std::unordered_map<oatpp::String, std::shared_ptr<Session>> m_sessions;
   std::mutex m_mutex;
 private:
   /* Inject application components */
@@ -51,24 +51,24 @@ public:
 
   /**
    * NOT thread-safe
-   * @param gameId
+   * @param sessionId
    * @return
    */
-  std::shared_ptr<Game> createGame(const oatpp::String& gameId);
+  std::shared_ptr<Session> createGameSession(const oatpp::String& sessionId);
 
   /**
    * NOT thread-safe
-   * @param gameId
+   * @param sessionId
    * @return
    */
-  std::shared_ptr<Game> getGame(const oatpp::String& gameId);
+  std::shared_ptr<Session> findGameSession(const oatpp::String& sessionId);
 
 
   /**
    * NOT thread-safe
-   * @param gameId
+   * @param sessionId
    */
-  void deleteGame(const oatpp::String& gameId);
+  void deleteGameSession(const oatpp::String& sessionId);
 
   /**
    * Get registry mutex
@@ -91,4 +91,4 @@ public:
 };
 
 
-#endif //Helicopter_games_Registry_hpp
+#endif //Helicopter_game_Registry_hpp

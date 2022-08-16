@@ -73,26 +73,26 @@ void Registry::sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socke
 
 }
 
-std::shared_ptr<Game> Registry::createGame(const oatpp::String& gameId) {
-  auto it = m_games.find(gameId);
-  if(it != m_games.end()) {
-    throw std::runtime_error("Game with such ID already exists. Can't create new game.");
+std::shared_ptr<Session> Registry::createGameSession(const oatpp::String& sessionId) {
+  auto it = m_sessions.find(sessionId);
+  if(it != m_sessions.end()) {
+    throw std::runtime_error("Session with such ID already exists. Can't create new session.");
   }
-  auto game = std::make_shared<Game>(gameId);
-  m_games.insert({gameId, game});
-  return game;
+  auto session = std::make_shared<Session>(sessionId);
+  m_sessions.insert({sessionId, session});
+  return session;
 }
 
-std::shared_ptr<Game> Registry::getGame(const oatpp::String& gameId) {
-  auto it = m_games.find(gameId);
-  if(it != m_games.end()) {
+std::shared_ptr<Session> Registry::findGameSession(const oatpp::String& sessionId) {
+  auto it = m_sessions.find(sessionId);
+  if(it != m_sessions.end()) {
     return it->second;
   }
-  return nullptr; // Game not found.
+  return nullptr; // Session not found.
 }
 
-void Registry::deleteGame(const oatpp::String& gameId) {
-  m_games.erase(gameId);
+void Registry::deleteGameSession(const oatpp::String& sessionId) {
+  m_sessions.erase(sessionId);
 }
 
 std::mutex& Registry::getRegistryMutex() {
@@ -103,30 +103,30 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
 
   OATPP_LOGD("Registry", "socket created - %d", socket.get())
 
-  auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
+  auto sessionId = params->find(Constants::PARAM_GAME_SESSION_ID)->second;
   auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
 
   bool isHostPeer = peerType == Constants::PARAM_PEER_TYPE_HOST;
-  std::shared_ptr<Game> game;
+  std::shared_ptr<Session> session;
   {
     std::lock_guard<std::mutex> lock(m_mutex);
-    game = getGame(gameId);
+    session = findGameSession(sessionId);
     if(isHostPeer) {
-      if(game) {
-        sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Game with such ID already exists. Can't create game."),true);
+      if(session) {
+        sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Session with such ID already exists. Can't create new session session."),true);
         return;
       } else {
-        game = createGame(gameId);
-        OATPP_LOGD("Registry", "Game created - %d", game.get())
+        session = createGameSession(sessionId);
+        OATPP_LOGD("Registry", "Session created - %d", session.get())
       }
     }
   }
 
-  auto peer = std::make_shared<Peer>(socket, game, 0, isHostPeer);
+  auto peer = std::make_shared<Peer>(socket, session, 0, isHostPeer);
   socket->setListener(peer);
 
-  game->addPeer(peer);
-  if(isHostPeer) game->setHost(peer);
+  session->addPeer(peer);
+  if(isHostPeer) session->setHost(peer);
 
   OATPP_LOGD("Registry", "peer created for socket - %d", socket.get())
 
@@ -139,15 +139,15 @@ void Registry::onBeforeDestroy_NonBlocking(const std::shared_ptr<AsyncWebSocket>
   auto peer = std::static_pointer_cast<Peer>(socket->getListener());
   if(peer) {
 
-    auto game = peer->getGame();
+    auto session = peer->getGameSession();
 
-    game->removePeerById(peer->getPeerId());
+    session->removePeerById(peer->getPeerId());
     peer->invalidateSocket();
 
-    if (game->isEmpty()) {
+    if (session->isEmpty()) {
       std::lock_guard<std::mutex> lock(m_mutex);
-      deleteGame(game->getId());
-      OATPP_LOGD("Registry", "Game deleted - %d", game.get())
+      deleteGameSession(session->getId());
+      OATPP_LOGD("Registry", "Session deleted - %d", session.get())
     }
 
   } else {

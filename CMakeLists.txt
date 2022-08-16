@@ -13,12 +13,12 @@ add_library(${project_name}-lib
         src/controller/HostController.hpp
         src/dto/Config.hpp
         src/dto/DTOs.hpp
-        src/games/Game.cpp
-        src/games/Game.hpp
-        src/games/Peer.cpp
-        src/games/Peer.hpp
-        src/games/Registry.cpp
-        src/games/Registry.hpp
+        src/game/Session.cpp
+        src/game/Session.hpp
+        src/game/Peer.cpp
+        src/game/Peer.hpp
+        src/game/Registry.cpp
+        src/game/Registry.hpp
         src/AppComponent.hpp
         src/Constants.hpp
 )
@@ -59,7 +59,7 @@ add_definitions(
 
 add_executable(${project_name}-exe
         src/App.cpp
-        src/games/Game.cpp src/games/Game.hpp src/Constants.hpp)
+        src/game/Session.cpp src/game/Session.hpp src/Constants.hpp)
 target_link_libraries(${project_name}-exe ${project_name}-lib)
 add_dependencies(${project_name}-exe ${project_name}-lib)
 

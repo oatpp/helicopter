@@ -29,7 +29,7 @@
 
 #include "dto/Config.hpp"
 
-#include "games/Registry.hpp"
+#include "game/Registry.hpp"
 
 #include "oatpp-openssl/server/ConnectionProvider.hpp"
 #include "oatpp-websocket/AsyncConnectionHandler.hpp"

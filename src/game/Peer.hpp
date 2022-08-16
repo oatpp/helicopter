@@ -24,8 +24,8 @@
  *
  ***************************************************************************/
 
-#ifndef Helicopter_games_Peer_hpp
-#define Helicopter_games_Peer_hpp
+#ifndef Helicopter_game_Peer_hpp
+#define Helicopter_game_Peer_hpp
 
 #include "Constants.hpp"
 
@@ -41,7 +41,7 @@
 #include "oatpp/core/data/mapping/ObjectMapper.hpp"
 #include "oatpp/core/macro/component.hpp"
 
-class Game; // FWD
+class Session; // FWD
 
 class Peer : public oatpp::websocket::AsyncWebSocket::Listener {
 private:
@@ -58,7 +58,7 @@ private:
 
 private:
   std::shared_ptr<AsyncWebSocket> m_socket;
-  std::shared_ptr<Game> m_game;
+  std::shared_ptr<Session> m_gameSession;
   v_int64 m_peerId;
   bool m_isHost;
 private:
@@ -70,7 +70,7 @@ private:
 public:
 
   Peer(const std::shared_ptr<AsyncWebSocket>& socket,
-       const std::shared_ptr<Game>& game,
+       const std::shared_ptr<Session>& gameSession,
        v_int64 peerId,
        bool isHost);
 
@@ -88,10 +88,10 @@ public:
   oatpp::async::CoroutineStarter sendErrorAsync(const oatpp::Object<ErrorDto>& error, bool fatal = false);
 
   /**
-   * Get game the peer associated with.
+   * Get the game session the peer associated with.
    * @return
    */
-  std::shared_ptr<Game> getGame();
+  std::shared_ptr<Session> getGameSession();
 
   /**
    * Set if peer is the game host.
@@ -126,4 +126,4 @@ public: // WebSocket Listener methods
 };
 
 
-#endif //Helicopter_games_Peer_hpp
+#endif //Helicopter_game_Peer_hpp

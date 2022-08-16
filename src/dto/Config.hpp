@@ -35,7 +35,7 @@
 #include OATPP_CODEGEN_BEGIN(DTO)
 
 /**
- * Game config
+ * Session config
  */
 class GameConfigDto : public oatpp::DTO {
 
@@ -81,7 +81,7 @@ public:
   DTO_FIELD(String, tlsCertificateChainPath);
 
   /**
-   * Game configs
+   * Session configs
    */
   DTO_FIELD(UnorderedFields<Object<GameConfigDto>>, games);
 

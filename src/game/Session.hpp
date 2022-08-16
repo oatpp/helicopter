@@ -24,42 +24,36 @@
  *
  ***************************************************************************/
 
-#include "Game.hpp"
+#ifndef Helicopter_game_Session_hpp
+#define Helicopter_game_Session_hpp
 
-Game::Game(const oatpp::String& id)
-  : m_id(id)
-  , m_peerIdCounter(0)
-{}
+#include "Peer.hpp"
 
-oatpp::String Game::getId() {
-  return m_id;
-}
+#include "oatpp/core/Types.hpp"
 
-void Game::addPeer(const std::shared_ptr<Peer>& peer) {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  m_peers.insert({peer->getPeerId(), peer});
-}
+class Session {
+private:
+  oatpp::String m_id;
+  std::atomic<v_int64> m_peerIdCounter;
+  std::unordered_map<v_int64, std::shared_ptr<Peer>> m_peers;
+  std::shared_ptr<Peer> m_host;
+  std::mutex m_peersMutex;
+public:
 
-void Game::setHost(const std::shared_ptr<Peer>& peer){
-  std::lock_guard<std::mutex> guard(m_peersMutex);
+  Session(const oatpp::String& id);
 
-  if(m_host) m_host->setAsHost(false);
+  oatpp::String getId();
 
-  m_host = peer;
-  peer->setAsHost(true);
-}
+  void addPeer(const std::shared_ptr<Peer>& peer);
+  void setHost(const std::shared_ptr<Peer>& peer);
 
-void Game::removePeerById(v_int64 peerId) {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  if(m_host && m_host->getPeerId() == peerId) m_host.reset();
-  m_peers.erase(peerId);
-}
+  void removePeerById(v_int64 peerId);
 
-v_int64 Game::generateNewPeerId() {
-  return m_peerIdCounter ++;
-}
+  v_int64 generateNewPeerId();
 
-bool Game::isEmpty() {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  return m_peers.empty();
-}
+  bool isEmpty();
+
+};
+
+
+#endif //Helicopter_game_Session_hpp

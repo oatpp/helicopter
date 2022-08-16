@@ -25,17 +25,17 @@
  ***************************************************************************/
 
 #include "Peer.hpp"
-#include "Game.hpp"
+#include "Session.hpp"
 
 #include "oatpp/network/tcp/Connection.hpp"
 #include "oatpp/encoding/Base64.hpp"
 
 Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
-           const std::shared_ptr<Game>& game,
+           const std::shared_ptr<Session>& gameSession,
            v_int64 peerId,
            bool isHost)
   : m_socket(socket)
-  , m_game(game)
+  , m_gameSession(gameSession)
   , m_peerId(peerId)
   , m_isHost(isHost)
 {}
@@ -114,8 +114,8 @@ oatpp::async::CoroutineStarter Peer::sendErrorAsync(const oatpp::Object<ErrorDto
 
 }
 
-std::shared_ptr<Game> Peer::getGame() {
-  return m_game;
+std::shared_ptr<Session> Peer::getGameSession() {
+  return m_gameSession;
 }
 
 v_int64 Peer::getPeerId() {
