@@ -34,6 +34,31 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
+/**
+ * Game config
+ */
+class GameConfig : public oatpp::DTO {
+
+  DTO_INIT(GameConfig, DTO)
+
+  /**
+   * Host peer can't change.
+   * If host peer disconnects the game is over and all other peers are dropped.
+   */
+  DTO_FIELD(Boolean, staticHost) = true;
+
+  /**
+   * The maximum number of peers connected to game (including host peer).
+   */
+  DTO_FIELD(UInt32, maxPeers) = 10;
+
+  /**
+   * Max size of the received bytes. (the whole MessageDto structure).
+   */
+  DTO_FIELD(UInt64, maxMessageSizeBytes) = 8 * 1024; // Default - 8Kb
+
+};
+
 class ConfigDto : public oatpp::DTO {
 public:
 
@@ -55,17 +80,10 @@ public:
    */
   DTO_FIELD(String, tlsCertificateChainPath);
 
-
   /**
-   * Max size of the received bytes. (the whole MessageDto structure).
-   * The actual payload is smaller.
+   * Game configs
    */
-  DTO_FIELD(UInt64, maxMessageSizeBytes) = 8 * 1024; // Default - 8Kb
-
-  /**
-   * Number of the most recent messages to keep in the room history.
-   */
-  DTO_FIELD(UInt32, maxRoomHistoryMessages) = 100;
+  DTO_FIELD(UnorderedFields<Object<GameConfig>>, games);
 
 public:
 

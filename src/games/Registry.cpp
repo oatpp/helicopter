@@ -149,6 +149,7 @@ void Registry::onBeforeDestroy_NonBlocking(const std::shared_ptr<AsyncWebSocket>
       deleteGame(game->getId());
       OATPP_LOGD("Registry", "Game deleted - %d", game.get())
     }
+
   } else {
     socket->getConnection().invalidate();
   }
