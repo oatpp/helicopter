@@ -132,9 +132,14 @@ ENUM(MessageCodes, v_int32,
 ENUM(ErrorCodes, v_int32,
 
      /**
+      * No game config found on the server.
+      */
+     VALUE(GAME_NOT_FOUND, 0),
+
+     /**
       * Operation not permitted.
       */
-     VALUE(OPERATION_NOT_PERMITTED, 0)
+     VALUE(OPERATION_NOT_PERMITTED, 1)
 
 );
 

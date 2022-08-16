@@ -87,6 +87,18 @@ public:
 
 public:
 
+  Object<GameConfigDto> getGameConfig(const oatpp::String& gameId) {
+    if(games) {
+      auto it = games->find(gameId);
+      if (it != games->end()) {
+        return it->second;
+      }
+    }
+    return nullptr;
+  }
+
+public:
+
   oatpp::String getHostString() {
     oatpp::data::stream::BufferOutputStream stream(256);
     v_uint16 defPort;

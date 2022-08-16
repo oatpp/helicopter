@@ -103,6 +103,14 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
 
   OATPP_LOGD("Registry", "socket created - %d", socket.get())
 
+  auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
+
+  auto game = m_config->getGameConfig(gameId);
+  if(!game) {
+    sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game not found. Game config should be present on the server."),true);
+    return;
+  }
+
   auto sessionId = params->find(Constants::PARAM_GAME_SESSION_ID)->second;
   auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
 

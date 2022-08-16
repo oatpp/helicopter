@@ -35,6 +35,7 @@ public:
 
 public:
 
+  static constexpr const char* PARAM_GAME_ID = "gameId";
   static constexpr const char* PARAM_GAME_SESSION_ID = "sessionId";
   static constexpr const char* PARAM_PEER_TYPE = "peerType";
   static constexpr const char* PARAM_PEER_TYPE_HOST = "host";

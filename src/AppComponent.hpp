@@ -101,6 +101,9 @@ public:
       config->statisticsUrl = m_cmdArgs.getNamedArgumentValue("--url-stats", "admin/stats.json");
     }
 
+    auto testGame1 = GameConfigDto::createShared();
+    config->games = {{"snake", testGame1}};
+
     return config;
 
   }());
