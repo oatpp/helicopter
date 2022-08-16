@@ -37,9 +37,9 @@
 /**
  * Game config
  */
-class GameConfig : public oatpp::DTO {
+class GameConfigDto : public oatpp::DTO {
 
-  DTO_INIT(GameConfig, DTO)
+  DTO_INIT(GameConfigDto, DTO)
 
   /**
    * Host peer can't change.
@@ -83,7 +83,7 @@ public:
   /**
    * Game configs
    */
-  DTO_FIELD(UnorderedFields<Object<GameConfig>>, games);
+  DTO_FIELD(UnorderedFields<Object<GameConfigDto>>, games);
 
 public:
 
