@@ -28,21 +28,22 @@
 #define Helicopter_game_Session_hpp
 
 #include "Peer.hpp"
-
-#include "oatpp/core/Types.hpp"
+#include "config/GameConfig.hpp"
 
 class Session {
 private:
   oatpp::String m_id;
+  oatpp::Object<GameConfigDto> m_config;
   std::atomic<v_int64> m_peerIdCounter;
   std::unordered_map<v_int64, std::shared_ptr<Peer>> m_peers;
   std::shared_ptr<Peer> m_host;
   std::mutex m_peersMutex;
 public:
 
-  Session(const oatpp::String& id);
+  Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& config);
 
   oatpp::String getId();
+  oatpp::Object<GameConfigDto> getConfig();
 
   void addPeer(const std::shared_ptr<Peer>& peer);
   void setHost(const std::shared_ptr<Peer>& peer);

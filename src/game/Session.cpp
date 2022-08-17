@@ -26,13 +26,18 @@
 
 #include "Session.hpp"
 
-Session::Session(const oatpp::String& id)
+Session::Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& config)
   : m_id(id)
+  , m_config(config)
   , m_peerIdCounter(0)
 {}
 
 oatpp::String Session::getId() {
   return m_id;
+}
+
+oatpp::Object<GameConfigDto> Session::getConfig() {
+  return m_config;
 }
 
 void Session::addPeer(const std::shared_ptr<Peer>& peer) {

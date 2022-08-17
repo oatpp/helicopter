@@ -61,11 +61,13 @@ public:
   Registry();
 
   /**
-   * NOT thread-safe
+   * Not thread safe.
+   * Create game session.
    * @param sessionId
+   * @param config
    * @return
    */
-  std::shared_ptr<Session> createGameSession(const oatpp::String& sessionId);
+  std::shared_ptr<Session> createGameSession(const oatpp::String& sessionId, const oatpp::Object<GameConfigDto>& config);
 
   /**
    * NOT thread-safe

@@ -100,7 +100,7 @@ Registry::SessionInfo Registry::getSessionForPeer(
       result.error = ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Session with such ID already exists. Can't create new session session.");
       return result;
     } else {
-      result.session = createGameSession(sessionId);
+      result.session = createGameSession(sessionId, gameConfig);
       OATPP_LOGD("Registry", "Session created - %d", result.session.get())
     }
   } else {
@@ -115,12 +115,12 @@ Registry::SessionInfo Registry::getSessionForPeer(
 
 }
 
-std::shared_ptr<Session> Registry::createGameSession(const oatpp::String& sessionId) {
+std::shared_ptr<Session> Registry::createGameSession(const oatpp::String& sessionId, const oatpp::Object<GameConfigDto>& config) {
   auto it = m_sessions.find(sessionId);
   if(it != m_sessions.end()) {
     throw std::runtime_error("Session with such ID already exists. Can't create new session.");
   }
-  auto session = std::make_shared<Session>(sessionId);
+  auto session = std::make_shared<Session>(sessionId, config);
   m_sessions.insert({sessionId, session});
   return session;
 }
