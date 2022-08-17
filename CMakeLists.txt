@@ -4,14 +4,16 @@ set(project_name helicopter) ## rename your project here
 
 project(${project_name})
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(src)
 
 add_library(${project_name}-lib
+        src/config/Config.hpp
+        src/config/GameConfig.cpp
+        src/config/GameConfig.hpp
         src/controller/ClientController.hpp
         src/controller/HostController.hpp
-        src/dto/Config.hpp
         src/dto/DTOs.hpp
         src/game/Session.cpp
         src/game/Session.hpp
@@ -20,8 +22,7 @@ add_library(${project_name}-lib
         src/game/Registry.cpp
         src/game/Registry.hpp
         src/AppComponent.hpp
-        src/Constants.hpp
-)
+        src/Constants.hpp)
 
 ## link libs
 

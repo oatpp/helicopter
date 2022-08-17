@@ -27,7 +27,8 @@
 #ifndef AppComponent_hpp
 #define AppComponent_hpp
 
-#include "dto/Config.hpp"
+#include "config/Config.hpp"
+#include "config/GameConfig.hpp"
 
 #include "game/Registry.hpp"
 
@@ -101,11 +102,20 @@ public:
       config->statisticsUrl = m_cmdArgs.getNamedArgumentValue("--url-stats", "admin/stats.json");
     }
 
-    auto testGame1 = GameConfigDto::createShared();
-    config->games = {{"snake", testGame1}};
+
 
     return config;
 
+  }());
+
+  /**
+   * Game configs
+   */
+  OATPP_CREATE_COMPONENT(std::shared_ptr<GameConfig>, gameConfig)([] {
+    auto config = std::make_shared<GameConfig>(nullptr);
+    auto testGame1 = GameConfigDto::createShared();
+    config->putGameConfig("snake", testGame1);
+    return config;
   }());
 
   /**

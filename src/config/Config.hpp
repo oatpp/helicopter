@@ -34,31 +34,6 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
-/**
- * Session config
- */
-class GameConfigDto : public oatpp::DTO {
-
-  DTO_INIT(GameConfigDto, DTO)
-
-  /**
-   * Host peer can't change.
-   * If host peer disconnects the game is over and all other peers are dropped.
-   */
-  DTO_FIELD(Boolean, staticHost) = true;
-
-  /**
-   * The maximum number of peers connected to game (including host peer).
-   */
-  DTO_FIELD(UInt32, maxPeers) = 10;
-
-  /**
-   * Max size of the received bytes. (the whole MessageDto structure).
-   */
-  DTO_FIELD(UInt64, maxMessageSizeBytes) = 8 * 1024; // Default - 8Kb
-
-};
-
 class ConfigDto : public oatpp::DTO {
 public:
 
@@ -79,23 +54,6 @@ public:
    * Path to TLS certificate chain file.
    */
   DTO_FIELD(String, tlsCertificateChainPath);
-
-  /**
-   * Session configs
-   */
-  DTO_FIELD(UnorderedFields<Object<GameConfigDto>>, games);
-
-public:
-
-  Object<GameConfigDto> getGameConfig(const oatpp::String& gameId) {
-    if(games) {
-      auto it = games->find(gameId);
-      if (it != games->end()) {
-        return it->second;
-      }
-    }
-    return nullptr;
-  }
 
 public:
 

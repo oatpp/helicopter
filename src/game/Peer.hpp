@@ -29,8 +29,10 @@
 
 #include "Constants.hpp"
 
+#include "config/Config.hpp"
+#include "config/GameConfig.hpp"
+
 #include "dto/DTOs.hpp"
-#include "dto/Config.hpp"
 
 #include "oatpp-websocket/AsyncWebSocket.hpp"
 

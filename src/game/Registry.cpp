@@ -105,7 +105,7 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
 
   auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
 
-  auto game = m_config->getGameConfig(gameId);
+  auto game = m_gameConfig->getGameConfig(gameId);
   if(!game) {
     sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game not found. Game config should be present on the server."),true);
     return;
