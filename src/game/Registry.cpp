@@ -73,6 +73,48 @@ void Registry::sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socke
 
 }
 
+Registry::SessionInfo Registry::getSessionForPeer(
+  const std::shared_ptr<AsyncWebSocket>& socket,
+  const std::shared_ptr<const ParameterMap>& params)
+{
+
+  SessionInfo result;
+
+  auto sessionId = params->find(Constants::PARAM_GAME_SESSION_ID)->second;
+  auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
+  result.isHost = peerType == Constants::PARAM_PEER_TYPE_HOST;
+
+
+  if(result.isHost) {
+
+    auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
+    auto gameConfig = m_gameConfig->getGameConfig(gameId);
+    if(!gameConfig) {
+      result.error = ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game config not found. Game config should be present on the server.");
+      return result;
+    }
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    result.session = findGameSession(sessionId);
+    if(result.session) {
+      result.error = ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Session with such ID already exists. Can't create new session session.");
+      return result;
+    } else {
+      result.session = createGameSession(sessionId);
+      OATPP_LOGD("Registry", "Session created - %d", result.session.get())
+    }
+  } else {
+    result.session = findGameSession(sessionId);
+    if(result.session == nullptr) {
+      result.error = ErrorDto::createShared(ErrorCodes::SESSION_NOT_FOUND, "No game session found for given sessionId.");
+      return result;
+    }
+  }
+
+  return result;
+
+}
+
 std::shared_ptr<Session> Registry::createGameSession(const oatpp::String& sessionId) {
   auto it = m_sessions.find(sessionId);
   if(it != m_sessions.end()) {
@@ -103,38 +145,24 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
 
   OATPP_LOGD("Registry", "socket created - %d", socket.get())
 
-  auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
+  auto sessionInfo = getSessionForPeer(socket, params);
 
-  auto game = m_gameConfig->getGameConfig(gameId);
-  if(!game) {
-    sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game not found. Game config should be present on the server."),true);
+  if(sessionInfo.error) {
+    sendSocketErrorAsync(socket, sessionInfo.error, true);
     return;
   }
 
-  auto sessionId = params->find(Constants::PARAM_GAME_SESSION_ID)->second;
-  auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
+  auto peer = std::make_shared<Peer>(
+    socket,
+    sessionInfo.session,
+    sessionInfo.session->generateNewPeerId(),
+    sessionInfo.isHost
+  );
 
-  bool isHostPeer = peerType == Constants::PARAM_PEER_TYPE_HOST;
-  std::shared_ptr<Session> session;
-  {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    session = findGameSession(sessionId);
-    if(isHostPeer) {
-      if(session) {
-        sendSocketErrorAsync(socket,ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Session with such ID already exists. Can't create new session session."),true);
-        return;
-      } else {
-        session = createGameSession(sessionId);
-        OATPP_LOGD("Registry", "Session created - %d", session.get())
-      }
-    }
-  }
-
-  auto peer = std::make_shared<Peer>(socket, session, 0, isHostPeer);
   socket->setListener(peer);
 
-  session->addPeer(peer);
-  if(isHostPeer) session->setHost(peer);
+  sessionInfo.session->addPeer(peer);
+  if(sessionInfo.isHost) sessionInfo.session->setHost(peer);
 
   OATPP_LOGD("Registry", "peer created for socket - %d", socket.get())
 

@@ -37,6 +37,14 @@
 
 class Registry : public oatpp::websocket::AsyncConnectionHandler::SocketInstanceListener {
 private:
+
+  struct SessionInfo {
+    std::shared_ptr<Session> session;
+    oatpp::Object<ErrorDto> error;
+    bool isHost;
+  };
+
+private:
   std::unordered_map<oatpp::String, std::shared_ptr<Session>> m_sessions;
   std::mutex m_mutex;
 private:
@@ -47,6 +55,7 @@ private:
   OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, m_objectMapper, Constants::COMPONENT_WS_API);
 private:
   void sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socket, const oatpp::Object<ErrorDto>& error, bool fatal = false);
+  SessionInfo getSessionForPeer(const std::shared_ptr<AsyncWebSocket>& socket, const std::shared_ptr<const ParameterMap>& params);
 public:
 
   Registry();

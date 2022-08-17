@@ -137,9 +137,14 @@ ENUM(ErrorCodes, v_int32,
      VALUE(GAME_NOT_FOUND, 0),
 
      /**
+      * No game session found for given sessionId.
+      */
+     VALUE(SESSION_NOT_FOUND, 1),
+
+     /**
       * Operation not permitted.
       */
-     VALUE(OPERATION_NOT_PERMITTED, 1)
+     VALUE(OPERATION_NOT_PERMITTED, 2)
 
 );
 

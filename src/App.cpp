@@ -25,6 +25,7 @@
  ***************************************************************************/
 
 #include "controller/HostController.hpp"
+#include "controller/ClientController.hpp"
 
 #include "./AppComponent.hpp"
 
@@ -42,6 +43,7 @@ void run(const oatpp::base::CommandLineArguments& args) {
 
   /* Create HostController and add all of its endpoints to router */
   router->addController(std::make_shared<HostController>());
+  router->addController(std::make_shared<ClientController>());
 
   /* Get connection handler component */
   OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler, Constants::COMPONENT_REST_API);
