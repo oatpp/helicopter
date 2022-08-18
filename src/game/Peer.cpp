@@ -159,12 +159,14 @@ bool Peer::queueMessage(const oatpp::Object<MessageDto>& message) {
 
   if(message) {
     std::lock_guard<std::mutex> lock(m_messageQueue->mutex);
-    m_messageQueue->queue.push_front(message);
-    if (!m_messageQueue->active) {
-      m_messageQueue->active = true;
-      m_asyncExecutor->execute<SendMessageCoroutine>(m_objectMapper, &m_writeLock, m_socket, m_messageQueue);
+    if(m_messageQueue->queue.size() < m_gameSession->getConfig()->maxQueuedMessages) {
+      m_messageQueue->queue.push_front(message);
+      if (!m_messageQueue->active) {
+        m_messageQueue->active = true;
+        m_asyncExecutor->execute<SendMessageCoroutine>(m_objectMapper, &m_writeLock, m_socket, m_messageQueue);
+      }
+      return true;
     }
-    return true;
   }
   return false;
 }

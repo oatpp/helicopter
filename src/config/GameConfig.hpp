@@ -58,6 +58,12 @@ class GameConfigDto : public oatpp::DTO {
    */
   DTO_FIELD(UInt64, maxMessageSizeBytes) = 8 * 1024; // Default - 8Kb
 
+  /**
+   * Max number of messages queued for the peer.
+   * If exceeded messages are dropped.
+   */
+  DTO_FIELD(UInt32, maxQueuedMessages) = 10;
+
 };
 
 class GameConfig {

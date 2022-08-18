@@ -99,7 +99,11 @@ public:
    */
   oatpp::async::CoroutineStarter sendErrorAsync(const oatpp::Object<ErrorDto>& error, bool fatal = false);
 
-
+  /**
+   * Queue message to send to peer.
+   * @param message
+   * @return
+   */
   bool queueMessage(const oatpp::Object<MessageDto>& message);
 
   /**
