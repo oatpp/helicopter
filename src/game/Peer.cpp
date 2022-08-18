@@ -27,8 +27,7 @@
 #include "Peer.hpp"
 #include "Session.hpp"
 
-#include "oatpp/network/tcp/Connection.hpp"
-#include "oatpp/encoding/Base64.hpp"
+#include "oatpp/core/utils/ConversionUtils.hpp"
 
 Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
            const std::shared_ptr<Session>& gameSession,
@@ -198,6 +197,10 @@ void Peer::invalidateSocket() {
   m_socket.reset();
 }
 
+oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDto>& message) {
+  return nullptr;
+}
+
 oatpp::async::CoroutineStarter Peer::onPing(const std::shared_ptr<AsyncWebSocket>& socket, const oatpp::String& message) {
   return oatpp::async::synchronize(&m_writeLock, socket->sendPongAsync(message));
 }
@@ -212,15 +215,31 @@ oatpp::async::CoroutineStarter Peer::onClose(const std::shared_ptr<AsyncWebSocke
 
 oatpp::async::CoroutineStarter Peer::readMessage(const std::shared_ptr<AsyncWebSocket>& socket, v_uint8 opcode, p_char8 data, oatpp::v_io_size size) {
 
+  if(m_messageBuffer.getCurrentPosition() + size >  m_gameSession->getConfig()->maxMessageSizeBytes) {
+    auto err = ErrorDto::createShared(
+      ErrorCodes::BAD_MESSAGE,
+      "Fatal Error. Serialized message size shouldn't exceed " +
+      oatpp::utils::conversion::int64ToStdStr(m_gameSession->getConfig()->maxMessageSizeBytes) + " bytes.");
+    return sendErrorAsync(err, true);
+  }
+
   if(size == 0) { // message transfer finished
 
     auto wholeMessage = m_messageBuffer.toString();
     m_messageBuffer.setCurrentPosition(0);
-    auto msg = m_messageBuffer.toString();
 
-    OATPP_LOGD("Peer", "message='%s'", msg->c_str())
+    oatpp::Object<MessageDto> message;
 
-    return nullptr;
+    try {
+      message = m_objectMapper->readFromString<oatpp::Object<MessageDto>>(wholeMessage);
+    } catch (const std::runtime_error& e) {
+      auto err = ErrorDto::createShared(
+        ErrorCodes::BAD_MESSAGE,
+        "Fatal Error. Can't parse message.");
+      return sendErrorAsync(err, true);
+    }
+
+    return handleMessage(message);
 
   } else if(size > 0) { // message frame received
     m_messageBuffer.writeSimple(data, size);

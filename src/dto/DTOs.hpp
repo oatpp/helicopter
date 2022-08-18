@@ -144,7 +144,12 @@ ENUM(ErrorCodes, v_int32,
      /**
       * Operation not permitted.
       */
-     VALUE(OPERATION_NOT_PERMITTED, 2)
+     VALUE(OPERATION_NOT_PERMITTED, 2),
+
+     /**
+      * Message is malformatted or violates configured restrictions.
+      */
+     VALUE(BAD_MESSAGE, 3)
 
 );
 

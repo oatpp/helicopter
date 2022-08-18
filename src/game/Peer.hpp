@@ -79,6 +79,10 @@ private:
   OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
   OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, m_objectMapper, Constants::COMPONENT_WS_API);
 
+private:
+
+  CoroutineStarter handleMessage(const oatpp::Object<MessageDto>& message);
+
 public:
 
   Peer(const std::shared_ptr<AsyncWebSocket>& socket,
