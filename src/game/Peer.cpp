@@ -38,6 +38,7 @@ Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
   , m_gameSession(gameSession)
   , m_peerId(peerId)
   , m_isHost(isHost)
+  , m_messageQueue(std::make_shared<MessageQueue>())
 {}
 
 void Peer::sendMessageAsync(const oatpp::String& message) {
@@ -114,6 +115,60 @@ oatpp::async::CoroutineStarter Peer::sendErrorAsync(const oatpp::Object<ErrorDto
 
 }
 
+bool Peer::queueMessage(const oatpp::Object<MessageDto>& message) {
+
+  class SendMessageCoroutine : public oatpp::async::Coroutine<SendMessageCoroutine> {
+  private:
+    std::shared_ptr<oatpp::data::mapping::ObjectMapper> m_mapper;
+    oatpp::async::Lock* m_lock;
+    std::shared_ptr<AsyncWebSocket> m_websocket;
+    std::shared_ptr<MessageQueue> m_queue;
+  public:
+
+    SendMessageCoroutine(const std::shared_ptr<oatpp::data::mapping::ObjectMapper>& mapper,
+                         oatpp::async::Lock* lock,
+                         const std::shared_ptr<AsyncWebSocket>& websocket,
+                         const std::shared_ptr<MessageQueue>& queue)
+      : m_mapper(mapper)
+      , m_lock(lock)
+      , m_websocket(websocket)
+      , m_queue(queue)
+    {}
+
+    Action act() override {
+
+      std::unique_lock<std::mutex> lock(m_queue->mutex);
+      if(m_queue->queue.empty()) {
+        m_queue->active = false;
+        return finish();
+      }
+      auto msg = m_queue->queue.back();
+      m_queue->queue.pop_back();
+      lock.unlock();
+
+      auto json = m_mapper->writeToString(msg);
+      return oatpp::async::synchronize(m_lock,m_websocket->sendOneFrameTextAsync(json)).next(repeat());
+
+    }
+
+    Action handleError(oatpp::async::Error* error) override {
+      return yieldTo(&SendMessageCoroutine::act);
+    }
+
+  };
+
+  if(message) {
+    std::lock_guard<std::mutex> lock(m_messageQueue->mutex);
+    m_messageQueue->queue.push_front(message);
+    if (!m_messageQueue->active) {
+      m_messageQueue->active = true;
+      m_asyncExecutor->execute<SendMessageCoroutine>(m_objectMapper, &m_writeLock, m_socket, m_messageQueue);
+    }
+    return true;
+  }
+  return false;
+}
+
 std::shared_ptr<Session> Peer::getGameSession() {
   return m_gameSession;
 }
@@ -132,6 +187,10 @@ bool Peer::isHost() {
 
 void Peer::invalidateSocket() {
   if(m_socket) {
+    {
+      std::lock_guard<std::mutex> lock(m_messageQueue->mutex);
+      m_messageQueue->queue.clear();
+    }
     m_socket->getConnection().invalidate();
   }
   m_socket.reset();

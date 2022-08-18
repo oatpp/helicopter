@@ -48,6 +48,14 @@ class Session; // FWD
 class Peer : public oatpp::websocket::AsyncWebSocket::Listener {
 private:
 
+  struct MessageQueue {
+    std::list<oatpp::Object<MessageDto>> queue;
+    std::mutex mutex;
+    bool active = false;
+  };
+
+private:
+
   /**
    * Buffer for messages. Needed for multi-frame messages.
    */
@@ -63,6 +71,8 @@ private:
   std::shared_ptr<Session> m_gameSession;
   v_int64 m_peerId;
   bool m_isHost;
+private:
+  std::shared_ptr<MessageQueue> m_messageQueue;
 private:
 
   /* Inject application components */
@@ -88,6 +98,9 @@ public:
    * @param fatal
    */
   oatpp::async::CoroutineStarter sendErrorAsync(const oatpp::Object<ErrorDto>& error, bool fatal = false);
+
+
+  bool queueMessage(const oatpp::Object<MessageDto>& message);
 
   /**
    * Get the game session the peer associated with.
