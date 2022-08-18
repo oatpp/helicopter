@@ -40,31 +40,59 @@ oatpp::Object<GameConfigDto> Session::getConfig() {
   return m_config;
 }
 
-void Session::addPeer(const std::shared_ptr<Peer>& peer) {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  m_peers.insert({peer->getPeerId(), peer});
+void Session::addPeer(const std::shared_ptr<Peer>& peer, bool isHost) {
+
+  {
+    std::lock_guard<std::mutex> lock(m_peersMutex);
+    m_peers.insert({peer->getPeerId(), peer});
+    if (isHost) {
+      m_host = peer;
+    } else {
+      if(m_host) {
+        m_host->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_HOST_CLIENT_JOINED, oatpp::Int64(peer->getPeerId())));
+      }
+    }
+  }
+
+  auto hello = HelloMessageDto::createShared();
+  hello->peerId = peer->getPeerId();
+  hello->isHost = isHost;
+
+  peer->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_HELLO, hello));
+
 }
 
 void Session::setHost(const std::shared_ptr<Peer>& peer){
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-
-  if(m_host) m_host->setAsHost(false);
-
+  std::lock_guard<std::mutex> lock(m_peersMutex);
   m_host = peer;
-  peer->setAsHost(true);
 }
 
-void Session::removePeerById(v_int64 peerId) {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  if(m_host && m_host->getPeerId() == peerId) m_host.reset();
+std::shared_ptr<Peer> Session::getHost() {
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  return m_host;
+}
+
+bool Session::isHostPeer(const std::shared_ptr<Peer>& peer) {
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  return m_host && peer && m_host.get() == peer.get();
+}
+
+void Session::removePeerById(v_int64 peerId, bool& isEmpty) {
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  if(m_host && m_host->getPeerId() == peerId) {
+    m_host.reset();
+  }
   m_peers.erase(peerId);
+  isEmpty = m_peers.empty();
+  if(m_host) {
+    m_host->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_HOST_CLIENT_LEFT, oatpp::Int64(peerId)));
+  }
 }
 
 v_int64 Session::generateNewPeerId() {
   return m_peerIdCounter ++;
 }
 
-bool Session::isEmpty() {
-  std::lock_guard<std::mutex> guard(m_peersMutex);
-  return m_peers.empty();
+std::mutex& Session::getSessionMutex() {
+  return m_peersMutex;
 }

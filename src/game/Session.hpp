@@ -45,14 +45,17 @@ public:
   oatpp::String getId();
   oatpp::Object<GameConfigDto> getConfig();
 
-  void addPeer(const std::shared_ptr<Peer>& peer);
+  void addPeer(const std::shared_ptr<Peer>& peer, bool isHost = false);
   void setHost(const std::shared_ptr<Peer>& peer);
+  std::shared_ptr<Peer> getHost();
 
-  void removePeerById(v_int64 peerId);
+  bool isHostPeer(const std::shared_ptr<Peer>& peer);
+
+  void removePeerById(v_int64 peerId, bool& isEmpty);
 
   v_int64 generateNewPeerId();
 
-  bool isEmpty();
+  std::mutex& getSessionMutex();
 
 };
 

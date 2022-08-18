@@ -70,7 +70,6 @@ private:
   std::shared_ptr<AsyncWebSocket> m_socket;
   std::shared_ptr<Session> m_gameSession;
   v_int64 m_peerId;
-  bool m_isHost;
 private:
   std::shared_ptr<MessageQueue> m_messageQueue;
 private:
@@ -87,8 +86,7 @@ public:
 
   Peer(const std::shared_ptr<AsyncWebSocket>& socket,
        const std::shared_ptr<Session>& gameSession,
-       v_int64 peerId,
-       bool isHost);
+       v_int64 peerId);
 
   /**
    * Send message to peer.
@@ -115,18 +113,6 @@ public:
    * @return
    */
   std::shared_ptr<Session> getGameSession();
-
-  /**
-   * Set if peer is the game host.
-   * @param isHost
-   */
-  void setAsHost(bool isHost);
-
-  /**
-   * Check if peer is the game host.
-   * @return
-   */
-  bool isHost();
 
   /**
    * Get peer peerId.

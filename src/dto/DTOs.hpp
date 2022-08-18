@@ -255,6 +255,10 @@ class MessageDto : public oatpp::DTO {
       case MessageCodes::INCOMING_DIRECT_MESSAGE:
         return oatpp::Object<DirectMessageDto>::Class::getType();
 
+      case MessageCodes::OUTGOING_HOST_CLIENT_JOINED:
+      case MessageCodes::OUTGOING_HOST_CLIENT_LEFT:
+        return oatpp::Int64::Class::getType();
+
       default:
         throw std::runtime_error("not implemented");
 

@@ -84,7 +84,6 @@ Registry::SessionInfo Registry::getSessionForPeer(
   auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
   result.isHost = peerType == Constants::PARAM_PEER_TYPE_HOST;
 
-
   if(result.isHost) {
 
     auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
@@ -155,23 +154,14 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
   auto peer = std::make_shared<Peer>(
     socket,
     sessionInfo.session,
-    sessionInfo.session->generateNewPeerId(),
-    sessionInfo.isHost
+    sessionInfo.session->generateNewPeerId()
   );
 
   socket->setListener(peer);
 
-  sessionInfo.session->addPeer(peer);
-  if(sessionInfo.isHost) sessionInfo.session->setHost(peer);
-
-  auto hello = HelloMessageDto::createShared();
-  hello->peerId = peer->getPeerId();
-  hello->isHost = sessionInfo.isHost;
-
-  auto msg = MessageDto::createShared(MessageCodes::OUTGOING_HELLO, hello);
-  peer->queueMessage(msg);
-
   OATPP_LOGD("Registry", "peer created for socket - %d", socket.get())
+
+  sessionInfo.session->addPeer(peer, sessionInfo.isHost);
 
 }
 
@@ -181,13 +171,14 @@ void Registry::onBeforeDestroy_NonBlocking(const std::shared_ptr<AsyncWebSocket>
 
   auto peer = std::static_pointer_cast<Peer>(socket->getListener());
   if(peer) {
+    peer->invalidateSocket();
 
     auto session = peer->getGameSession();
 
-    session->removePeerById(peer->getPeerId());
-    peer->invalidateSocket();
+    bool isEmptySession;
+    session->removePeerById(peer->getPeerId(), isEmptySession);
 
-    if (session->isEmpty()) {
+    if (isEmptySession) {
       std::lock_guard<std::mutex> lock(m_mutex);
       deleteGameSession(session->getId());
       OATPP_LOGD("Registry", "Session deleted - %d", session.get())

@@ -31,12 +31,10 @@
 
 Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
            const std::shared_ptr<Session>& gameSession,
-           v_int64 peerId,
-           bool isHost)
+           v_int64 peerId)
   : m_socket(socket)
   , m_gameSession(gameSession)
   , m_peerId(peerId)
-  , m_isHost(isHost)
   , m_messageQueue(std::make_shared<MessageQueue>())
 {}
 
@@ -176,14 +174,6 @@ std::shared_ptr<Session> Peer::getGameSession() {
 
 v_int64 Peer::getPeerId() {
   return m_peerId;
-}
-
-void Peer::setAsHost(bool isHost) {
-  m_isHost = isHost;
-}
-
-bool Peer::isHost() {
-  return m_isHost;
 }
 
 void Peer::invalidateSocket() {
