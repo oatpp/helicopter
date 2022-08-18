@@ -164,6 +164,13 @@ void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& 
   sessionInfo.session->addPeer(peer);
   if(sessionInfo.isHost) sessionInfo.session->setHost(peer);
 
+  auto hello = HelloMessageDto::createShared();
+  hello->peerId = peer->getPeerId();
+  hello->isHost = sessionInfo.isHost;
+
+  auto msg = MessageDto::createShared(MessageCodes::OUTGOING_HELLO, hello);
+  peer->queueMessage(msg);
+
   OATPP_LOGD("Registry", "peer created for socket - %d", socket.get())
 
 }
