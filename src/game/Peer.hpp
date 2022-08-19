@@ -80,6 +80,7 @@ private:
 
 private:
 
+  CoroutineStarter handleClientMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleMessage(const oatpp::Object<MessageDto>& message);
 
 public:
@@ -92,7 +93,7 @@ public:
    * Send message to peer.
    * @param message
    */
-  void sendMessageAsync(const oatpp::String& message);
+  oatpp::async::CoroutineStarter sendMessageAsync(const oatpp::Object<MessageDto>& message);
 
   /**
    * Send error message to peer.

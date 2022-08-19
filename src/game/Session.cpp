@@ -72,9 +72,9 @@ std::shared_ptr<Peer> Session::getHost() {
   return m_host;
 }
 
-bool Session::isHostPeer(const std::shared_ptr<Peer>& peer) {
+bool Session::isHostPeer(v_int64 peerId) {
   std::lock_guard<std::mutex> lock(m_peersMutex);
-  return m_host && peer && m_host.get() == peer.get();
+  return m_host && m_host->getPeerId() == peerId;
 }
 
 void Session::removePeerById(v_int64 peerId, bool& isEmpty) {

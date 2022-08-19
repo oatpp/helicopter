@@ -72,7 +72,7 @@ ENUM(MessageCodes, v_int32,
      VALUE(OUTGOING_NEW_HOST, 4),
 
      /**
-      * Server sends message to peer.
+      * Server sends message to peer from other peer.
       */
      VALUE(OUTGOING_MESSAGE, 5),
 
@@ -145,7 +145,12 @@ ENUM(ErrorCodes, v_int32,
      /**
       * Message is malformatted or violates configured restrictions.
       */
-     VALUE(BAD_MESSAGE, 3)
+     VALUE(BAD_MESSAGE, 3),
+
+     /**
+      * Session is in an invalid state.
+      */
+     VALUE(INVALID_STATE, 4)
 
 );
 
@@ -215,6 +220,22 @@ class DirectMessageDto : public oatpp::DTO {
 
 };
 
+class OutgoingMessageDto : public oatpp::DTO {
+
+  DTO_INIT(OutgoingMessageDto, DTO)
+
+  /**
+   * peerId of sender
+   */
+  DTO_FIELD(Int64, peerId);
+
+  /**
+   * Message data
+   */
+  DTO_FIELD(String, data);
+
+};
+
 /**
  * Message
  */
@@ -249,6 +270,9 @@ class MessageDto : public oatpp::DTO {
       case MessageCodes::OUTGOING_ERROR:
         return oatpp::Object<ErrorDto>::Class::getType();
 
+      case MessageCodes::OUTGOING_MESSAGE:
+        return oatpp::Object<OutgoingMessageDto>::Class::getType();
+
       case MessageCodes::INCOMING_BROADCAST:
         return oatpp::String::Class::getType();
 
@@ -258,6 +282,9 @@ class MessageDto : public oatpp::DTO {
       case MessageCodes::OUTGOING_HOST_CLIENT_JOINED:
       case MessageCodes::OUTGOING_HOST_CLIENT_LEFT:
         return oatpp::Int64::Class::getType();
+
+      case MessageCodes::INCOMING_CLIENT_MESSAGE:
+        return oatpp::String::Class::getType();
 
       default:
         throw std::runtime_error("not implemented");

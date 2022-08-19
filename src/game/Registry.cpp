@@ -54,9 +54,7 @@ void Registry::sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socke
       auto call = m_websocket->sendOneFrameTextAsync(m_message);
 
       if(m_fatal) {
-        return call
-                .next(m_websocket->sendCloseAsync())
-                .next(new oatpp::async::Error("API Error"));
+        return call.next(m_websocket->sendCloseAsync()).next(finish());
       }
 
       return call.next(finish());

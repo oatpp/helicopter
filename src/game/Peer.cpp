@@ -38,7 +38,7 @@ Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
   , m_messageQueue(std::make_shared<MessageQueue>())
 {}
 
-void Peer::sendMessageAsync(const oatpp::String& message) {
+oatpp::async::CoroutineStarter Peer::sendMessageAsync(const oatpp::Object<MessageDto>& message) {
 
   class SendMessageCoroutine : public oatpp::async::Coroutine<SendMessageCoroutine> {
   private:
@@ -61,9 +61,7 @@ void Peer::sendMessageAsync(const oatpp::String& message) {
 
   };
 
-  if(m_socket) {
-    m_asyncExecutor->execute<SendMessageCoroutine>(&m_writeLock, m_socket, message);
-  }
+  return SendMessageCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
 
 }
 
@@ -94,8 +92,8 @@ oatpp::async::CoroutineStarter Peer::sendErrorAsync(const oatpp::Object<ErrorDto
 
       if(m_fatal) {
         return call
-               .next(m_websocket->sendCloseAsync())
-               .next(new oatpp::async::Error("API Error"));
+               .next(m_websocket->sendCloseAsync()).next(finish());
+               //.next(new oatpp::async::Error("API Error"));
       }
 
       return call.next(finish());
@@ -187,7 +185,35 @@ void Peer::invalidateSocket() {
   m_socket.reset();
 }
 
+oatpp::async::CoroutineStarter Peer::handleClientMessage(const oatpp::Object<MessageDto>& message) {
+
+  auto host = m_gameSession->getHost();
+  if(host == nullptr) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::INVALID_STATE, "There is no game host. No one will receive this message."));
+  }
+
+  if(host->getPeerId() == m_peerId) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Host can't send message to itself."));
+  }
+
+  auto payload = OutgoingMessageDto::createShared();
+  payload->peerId = m_peerId;
+  payload->data = message->payload.retrieve<oatpp::String>();
+
+  return host->sendMessageAsync(MessageDto::createShared(MessageCodes::OUTGOING_MESSAGE, payload));
+
+}
+
 oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDto>& message) {
+
+  if(!message->code) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Message MUST contain 'code' field."));
+  }
+
+  switch (*message->code) {
+    case MessageCodes::INCOMING_CLIENT_MESSAGE: return handleClientMessage(message);
+  }
+  
   return nullptr;
 }
 
@@ -200,6 +226,7 @@ oatpp::async::CoroutineStarter Peer::onPong(const std::shared_ptr<AsyncWebSocket
 }
 
 oatpp::async::CoroutineStarter Peer::onClose(const std::shared_ptr<AsyncWebSocket>& socket, v_uint16 code, const oatpp::String& message) {
+  OATPP_LOGD("Peer", "onClose received.")
   return nullptr; // do nothing
 }
 

@@ -49,7 +49,7 @@ public:
   void setHost(const std::shared_ptr<Peer>& peer);
   std::shared_ptr<Peer> getHost();
 
-  bool isHostPeer(const std::shared_ptr<Peer>& peer);
+  bool isHostPeer(v_int64 peerId);
 
   void removePeerById(v_int64 peerId, bool& isEmpty);
 
