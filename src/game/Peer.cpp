@@ -185,6 +185,56 @@ void Peer::invalidateSocket() {
   m_socket.reset();
 }
 
+oatpp::async::CoroutineStarter Peer::handleBroadcast(const oatpp::Object<MessageDto>& message) {
+
+  auto peers = m_gameSession->getAllPeers();
+
+  for(auto peer : peers) {
+
+    if(peer->getPeerId() != m_peerId) {
+      auto payload = OutgoingMessageDto::createShared();
+      payload->peerId = m_peerId;
+      payload->data = message->payload.retrieve<oatpp::String>();
+
+      peer->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_MESSAGE, payload));
+    }
+
+  }
+
+  return nullptr;
+
+}
+
+oatpp::async::CoroutineStarter Peer::handleDirectMessage(const oatpp::Object<MessageDto>& message) {
+
+  auto dm = message->payload.retrieve<oatpp::Object<DirectMessageDto>>();
+
+  if(!dm) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Message MUST contain 'payload.'"));
+  }
+
+  if(!dm->peerIds || dm->peerIds->empty()) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Payload MUST contain array of peerIds of recipients."));
+  }
+
+  auto peers = m_gameSession->getPeers(dm->peerIds);
+
+  for(auto peer : peers) {
+
+    if(peer->getPeerId() != m_peerId) {
+      auto payload = OutgoingMessageDto::createShared();
+      payload->peerId = m_peerId;
+      payload->data = dm->data;
+
+      peer->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_MESSAGE, payload));
+    }
+
+  }
+
+  return nullptr;
+
+}
+
 oatpp::async::CoroutineStarter Peer::handleClientMessage(const oatpp::Object<MessageDto>& message) {
 
   auto host = m_gameSession->getHost();
@@ -200,7 +250,9 @@ oatpp::async::CoroutineStarter Peer::handleClientMessage(const oatpp::Object<Mes
   payload->peerId = m_peerId;
   payload->data = message->payload.retrieve<oatpp::String>();
 
-  return host->sendMessageAsync(MessageDto::createShared(MessageCodes::OUTGOING_MESSAGE, payload));
+  host->queueMessage(MessageDto::createShared(MessageCodes::OUTGOING_MESSAGE, payload));
+
+  return nullptr;
 
 }
 
@@ -211,10 +263,13 @@ oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDt
   }
 
   switch (*message->code) {
+    case MessageCodes::INCOMING_BROADCAST: return handleBroadcast(message);
+    case MessageCodes::INCOMING_DIRECT_MESSAGE: return handleDirectMessage(message);
     case MessageCodes::INCOMING_CLIENT_MESSAGE: return handleClientMessage(message);
   }
   
   return nullptr;
+
 }
 
 oatpp::async::CoroutineStarter Peer::onPing(const std::shared_ptr<AsyncWebSocket>& socket, const oatpp::String& message) {

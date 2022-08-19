@@ -89,6 +89,37 @@ void Session::removePeerById(v_int64 peerId, bool& isEmpty) {
   }
 }
 
+std::vector<std::shared_ptr<Peer>> Session::getAllPeers() {
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  std::vector<std::shared_ptr<Peer>> result;
+  for(auto& pair : m_peers) {
+    result.emplace_back(pair.second);
+  }
+  return result;
+}
+
+std::vector<std::shared_ptr<Peer>> Session::getPeers(const oatpp::Vector<oatpp::Int64>& peerIds) {
+
+  if(!peerIds) {
+    return {};
+  }
+
+  std::vector<std::shared_ptr<Peer>> result;
+
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+
+  for(auto& id : *peerIds) {
+    if(id) {
+      auto it = m_peers.find(*id);
+      if(it != m_peers.end()) {
+        result.emplace_back(it->second);
+      }
+    }
+  }
+
+  return result;
+}
+
 v_int64 Session::generateNewPeerId() {
   return m_peerIdCounter ++;
 }

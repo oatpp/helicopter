@@ -80,6 +80,8 @@ private:
 
 private:
 
+  CoroutineStarter handleBroadcast(const oatpp::Object<MessageDto>& message);
+  CoroutineStarter handleDirectMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleClientMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleMessage(const oatpp::Object<MessageDto>& message);
 

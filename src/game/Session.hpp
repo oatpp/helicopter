@@ -53,6 +53,9 @@ public:
 
   void removePeerById(v_int64 peerId, bool& isEmpty);
 
+  std::vector<std::shared_ptr<Peer>> getAllPeers();
+  std::vector<std::shared_ptr<Peer>> getPeers(const oatpp::Vector<oatpp::Int64>& peerIds);
+
   v_int64 generateNewPeerId();
 
   std::mutex& getSessionMutex();
