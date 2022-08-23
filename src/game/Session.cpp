@@ -123,7 +123,3 @@ std::vector<std::shared_ptr<Peer>> Session::getPeers(const oatpp::Vector<oatpp::
 v_int64 Session::generateNewPeerId() {
   return m_peerIdCounter ++;
 }
-
-std::mutex& Session::getSessionMutex() {
-  return m_peersMutex;
-}

@@ -58,8 +58,6 @@ public:
 
   v_int64 generateNewPeerId();
 
-  std::mutex& getSessionMutex();
-
 };
 
 

@@ -32,9 +32,18 @@
 
 class Game {
 private:
-  oatpp::Object<GameConfigDto> m_config;
-  std::unordered_map<oatpp::String, std::shared_ptr<Session>> m_sessions;
-  std::mutex m_mutex;
+  struct State {
+    oatpp::Object<GameConfigDto> config;
+    std::unordered_map<oatpp::String, std::shared_ptr<Session>> sessions;
+    std::mutex mutex;
+    bool isPingerActive;
+  };
+private:
+  std::shared_ptr<State> m_state;
+private:
+  OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
+private:
+  void startPinger();
 public:
 
   /**

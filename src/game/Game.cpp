@@ -27,32 +27,75 @@
 #include "Game.hpp"
 
 Game::Game(const oatpp::Object<GameConfigDto>& config)
-  : m_config(config)
+  : m_state(std::make_shared<State>())
 {
+  m_state->config = config;
+  m_state->isPingerActive = false;
+}
 
+void Game::startPinger() {
+
+  class Pinger : public oatpp::async::Coroutine<Pinger> {
+  private:
+    std::shared_ptr<State> m_state;
+  public:
+
+    Pinger(const std::shared_ptr<State>& state)
+      : m_state(state)
+    {}
+
+    Action act() override {
+
+      std::lock_guard<std::mutex> lock(m_state->mutex);
+
+      if(!m_state->isPingerActive) {
+        m_state->isPingerActive = false;
+        return finish();
+      }
+
+      for(auto& session : m_state->sessions) {
+        // pingAllPeers;
+      }
+
+      return waitRepeat(std::chrono::milliseconds(m_state->config->pingIntervalMillis));
+
+    }
+
+  };
+
+  if(!m_state->isPingerActive) {
+    m_state->isPingerActive = true;
+    m_asyncExecutor->execute<Pinger>(m_state);
+  }
 }
 
 std::shared_ptr<Session> Game::createNewSession(const oatpp::String& sessionId) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  auto it = m_sessions.find(sessionId);
-  if(it != m_sessions.end()) {
+
+  std::lock_guard<std::mutex> lock(m_state->mutex);
+
+  auto it = m_state->sessions.find(sessionId);
+  if(it != m_state->sessions.end()) {
     return nullptr;
   }
-  auto session = std::make_shared<Session>(sessionId, m_config);
-  m_sessions.insert({sessionId, session});
+
+  auto session = std::make_shared<Session>(sessionId, m_state->config);
+  m_state->sessions.insert({sessionId, session});
+
+  startPinger();
+
   return session;
 }
 
 std::shared_ptr<Session> Game::findSession(const oatpp::String& sessionId) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  auto it = m_sessions.find(sessionId);
-  if(it != m_sessions.end()) {
+  std::lock_guard<std::mutex> lock(m_state->mutex);
+  auto it = m_state->sessions.find(sessionId);
+  if(it != m_state->sessions.end()) {
     return it->second;
   }
   return nullptr; // Session not found.
 }
 
 void Game::deleteSession(const oatpp::String& sessionId) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  m_sessions.erase(sessionId);
+  std::lock_guard<std::mutex> lock(m_state->mutex);
+  m_state->sessions.erase(sessionId);
 }
