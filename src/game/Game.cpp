@@ -24,45 +24,35 @@
  *
  ***************************************************************************/
 
-#include "GameConfig.hpp"
+#include "Game.hpp"
 
-GameConfig::GameConfig(const oatpp::String& configFilename)
-  : m_configFile(configFilename)
+Game::Game(const oatpp::Object<GameConfigDto>& config)
+  : m_config(config)
 {
-  if(configFilename) {
-    auto json = oatpp::String::loadFromFile(configFilename->c_str());
-    m_games = m_mapper.readFromString<oatpp::UnorderedFields<oatpp::Object<GameConfigDto>>>(json);
-  }
+
 }
 
-void GameConfig::putGameConfig(const oatpp::Object<GameConfigDto>& config) {
+std::shared_ptr<Session> Game::createNewSession(const oatpp::String& sessionId) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  if(m_games == nullptr) {
-    m_games = oatpp::UnorderedFields<oatpp::Object<GameConfigDto>>({});
+  auto it = m_sessions.find(sessionId);
+  if(it != m_sessions.end()) {
+    return nullptr;
   }
-  m_games->insert({config->gameId, config});
+  auto session = std::make_shared<Session>(sessionId, m_config);
+  m_sessions.insert({sessionId, session});
+  return session;
 }
 
-oatpp::Object<GameConfigDto> GameConfig::getGameConfig(const oatpp::String& gameId) {
+std::shared_ptr<Session> Game::findSession(const oatpp::String& sessionId) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  if(m_games) {
-    auto it = m_games->find(gameId);
-    if(it != m_games->end()) {
-      return it->second;
-    }
+  auto it = m_sessions.find(sessionId);
+  if(it != m_sessions.end()) {
+    return it->second;
   }
-  return nullptr;
+  return nullptr; // Session not found.
 }
 
-bool GameConfig::save() {
-  oatpp::String json;
-  {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    json = m_mapper.writeToString(m_games);
-  }
-  if(m_configFile) {
-    json.saveToFile(m_configFile->c_str());
-    return true;
-  }
-  return false;
+void Game::deleteSession(const oatpp::String& sessionId) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_sessions.erase(sessionId);
 }

@@ -60,17 +60,13 @@ public:
 
     Action act() override {
 
-      auto sessionId = request->getQueryParameter(Constants::PARAM_GAME_SESSION_ID);
-
-      OATPP_ASSERT_HTTP(sessionId, Status::CODE_400, oatpp::String("Please specify '") + Constants::PARAM_GAME_SESSION_ID +  "' query parameter")
-
       /* Websocket handshake */
       auto response = oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), controller->websocketConnectionHandler);
-
       auto parameters = std::make_shared<oatpp::network::ConnectionHandler::ParameterMap>();
 
+      (*parameters)[Constants::PARAM_GAME_ID] = request->getQueryParameter(Constants::PARAM_GAME_ID);
+      (*parameters)[Constants::PARAM_GAME_SESSION_ID] = request->getQueryParameter(Constants::PARAM_GAME_SESSION_ID);
       (*parameters)[Constants::PARAM_PEER_TYPE] = Constants::PARAM_PEER_TYPE_CLIENT;
-      (*parameters)[Constants::PARAM_GAME_SESSION_ID] = sessionId;
 
       /* Set connection upgrade params */
       response->setConnectionUpgradeParameters(parameters);

@@ -24,45 +24,47 @@
  *
  ***************************************************************************/
 
-#include "GameConfig.hpp"
+#ifndef Helicopter_game_Game_hpp
+#define Helicopter_game_Game_hpp
 
-GameConfig::GameConfig(const oatpp::String& configFilename)
-  : m_configFile(configFilename)
-{
-  if(configFilename) {
-    auto json = oatpp::String::loadFromFile(configFilename->c_str());
-    m_games = m_mapper.readFromString<oatpp::UnorderedFields<oatpp::Object<GameConfigDto>>>(json);
-  }
-}
+#include "./Session.hpp"
+#include "config/GameConfig.hpp"
 
-void GameConfig::putGameConfig(const oatpp::Object<GameConfigDto>& config) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  if(m_games == nullptr) {
-    m_games = oatpp::UnorderedFields<oatpp::Object<GameConfigDto>>({});
-  }
-  m_games->insert({config->gameId, config});
-}
+class Game {
+private:
+  oatpp::Object<GameConfigDto> m_config;
+  std::unordered_map<oatpp::String, std::shared_ptr<Session>> m_sessions;
+  std::mutex m_mutex;
+public:
 
-oatpp::Object<GameConfigDto> GameConfig::getGameConfig(const oatpp::String& gameId) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  if(m_games) {
-    auto it = m_games->find(gameId);
-    if(it != m_games->end()) {
-      return it->second;
-    }
-  }
-  return nullptr;
-}
+  /**
+   * Constructor.
+   * @param config
+   */
+  Game(const oatpp::Object<GameConfigDto>& config);
 
-bool GameConfig::save() {
-  oatpp::String json;
-  {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    json = m_mapper.writeToString(m_games);
-  }
-  if(m_configFile) {
-    json.saveToFile(m_configFile->c_str());
-    return true;
-  }
-  return false;
-}
+  /**
+   * Not thread safe.
+   * Create new game session.
+   * @param sessionId
+   * @param config
+   * @return - `std::shared_ptr` to a new Session or `nullptr` if session with such ID already exists.
+   */
+  std::shared_ptr<Session> createNewSession(const oatpp::String& sessionId);
+
+  /**
+   * NOT thread-safe
+   * @param sessionId
+   * @return
+   */
+  std::shared_ptr<Session> findSession(const oatpp::String& sessionId);
+
+  /**
+   * NOT thread-safe
+   * @param sessionId
+   */
+  void deleteSession(const oatpp::String& sessionId);
+
+};
+
+#endif //Helicopter_game_Game_hpp

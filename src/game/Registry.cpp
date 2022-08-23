@@ -71,6 +71,15 @@ void Registry::sendSocketErrorAsync(const std::shared_ptr<AsyncWebSocket>& socke
 
 }
 
+oatpp::String Registry::getRequiredParameter(const oatpp::String& name, const std::shared_ptr<const ParameterMap>& params, SessionInfo& sessionInfo) {
+  auto it = params->find(name);
+  if(it != params->end() && it->second) {
+    return it->second;
+  }
+  sessionInfo.error = ErrorDto::createShared(ErrorCodes::BAD_REQUEST, "Missing required parameter - '" + name + "'.");
+  return nullptr;
+}
+
 Registry::SessionInfo Registry::getSessionForPeer(
   const std::shared_ptr<AsyncWebSocket>& socket,
   const std::shared_ptr<const ParameterMap>& params)
@@ -78,31 +87,32 @@ Registry::SessionInfo Registry::getSessionForPeer(
 
   SessionInfo result;
 
-  auto sessionId = params->find(Constants::PARAM_GAME_SESSION_ID)->second;
-  auto peerType = params->find(Constants::PARAM_PEER_TYPE)->second;
+  auto gameId = getRequiredParameter(Constants::PARAM_GAME_ID, params, result);
+  if(result.error) return result;
+
+  auto sessionId = getRequiredParameter(Constants::PARAM_GAME_SESSION_ID, params, result);
+  if(result.error) return result;
+
+  auto peerType = getRequiredParameter(Constants::PARAM_PEER_TYPE, params, result);
+  if(result.error) return result;
+
   result.isHost = peerType == Constants::PARAM_PEER_TYPE_HOST;
 
+  auto game = getGameById(gameId);
+  if(!game) {
+    result.error = ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game config not found. Game config should be present on the server.");
+    return result;
+  }
+
   if(result.isHost) {
-
-    auto gameId = params->find(Constants::PARAM_GAME_ID)->second;
-    auto gameConfig = m_gameConfig->getGameConfig(gameId);
-    if(!gameConfig) {
-      result.error = ErrorDto::createShared(ErrorCodes::GAME_NOT_FOUND, "Game config not found. Game config should be present on the server.");
-      return result;
-    }
-
-    std::lock_guard<std::mutex> lock(m_mutex);
-    result.session = findGameSession(sessionId);
-    if(result.session) {
+    result.session = game->createNewSession(sessionId);
+    if(!result.session) {
       result.error = ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Session with such ID already exists. Can't create new session session.");
       return result;
-    } else {
-      result.session = createGameSession(sessionId, gameConfig);
-      OATPP_LOGD("Registry", "Session created - %d", result.session.get())
     }
   } else {
-    result.session = findGameSession(sessionId);
-    if(result.session == nullptr) {
+    result.session = game->findSession(sessionId);
+    if(!result.session) {
       result.error = ErrorDto::createShared(ErrorCodes::SESSION_NOT_FOUND, "No game session found for given sessionId.");
       return result;
     }
@@ -112,30 +122,24 @@ Registry::SessionInfo Registry::getSessionForPeer(
 
 }
 
-std::shared_ptr<Session> Registry::createGameSession(const oatpp::String& sessionId, const oatpp::Object<GameConfigDto>& config) {
-  auto it = m_sessions.find(sessionId);
-  if(it != m_sessions.end()) {
-    throw std::runtime_error("Session with such ID already exists. Can't create new session.");
-  }
-  auto session = std::make_shared<Session>(sessionId, config);
-  m_sessions.insert({sessionId, session});
-  return session;
-}
+std::shared_ptr<Game> Registry::getGameById(const oatpp::String& gameId) {
 
-std::shared_ptr<Session> Registry::findGameSession(const oatpp::String& sessionId) {
-  auto it = m_sessions.find(sessionId);
-  if(it != m_sessions.end()) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  auto it = m_games.find(gameId);
+  if(it != m_games.end()) {
     return it->second;
   }
-  return nullptr; // Session not found.
-}
 
-void Registry::deleteGameSession(const oatpp::String& sessionId) {
-  m_sessions.erase(sessionId);
-}
+  auto config = m_gameConfig->getGameConfig(gameId);
+  if(config) {
+    auto game = std::make_shared<Game>(config);
+    m_games.insert({config->gameId, game});
+    return game;
+  }
 
-std::mutex& Registry::getRegistryMutex() {
-  return m_mutex;
+  return nullptr;
+
 }
 
 void Registry::onAfterCreate_NonBlocking(const std::shared_ptr<AsyncWebSocket>& socket, const std::shared_ptr<const ParameterMap>& params) {
@@ -177,8 +181,8 @@ void Registry::onBeforeDestroy_NonBlocking(const std::shared_ptr<AsyncWebSocket>
     session->removePeerById(peer->getPeerId(), isEmptySession);
 
     if (isEmptySession) {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      deleteGameSession(session->getId());
+      auto game = getGameById(session->getConfig()->gameId);
+      game->deleteSession(session->getId());
       OATPP_LOGD("Registry", "Session deleted - %d", session.get())
     }
 

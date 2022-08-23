@@ -57,9 +57,9 @@ ENUM(MessageCodes, v_int32,
      VALUE(OUTGOING_PING, 1),
 
      /**
-      * Peer responds to server with ping message.
+      * Peer responds to server ping with pong message.
       */
-     VALUE(INCOMING_PING, 2),
+     VALUE(INCOMING_PONG, 2),
 
      /**
       * Sent to peer to indicate operation error.
@@ -128,29 +128,34 @@ ENUM(MessageCodes, v_int32,
 ENUM(ErrorCodes, v_int32,
 
      /**
+      * Request is malformed or it is missing required parameters.
+      */
+     VALUE(BAD_REQUEST, 0),
+
+     /**
       * No game config found on the server.
       */
-     VALUE(GAME_NOT_FOUND, 0),
+     VALUE(GAME_NOT_FOUND, 1),
 
      /**
       * No game session found for given sessionId.
       */
-     VALUE(SESSION_NOT_FOUND, 1),
+     VALUE(SESSION_NOT_FOUND, 2),
 
      /**
       * Operation not permitted.
       */
-     VALUE(OPERATION_NOT_PERMITTED, 2),
+     VALUE(OPERATION_NOT_PERMITTED, 3),
 
      /**
       * Message is malformatted or violates configured restrictions.
       */
-     VALUE(BAD_MESSAGE, 3),
+     VALUE(BAD_MESSAGE, 4),
 
      /**
       * Session is in an invalid state.
       */
-     VALUE(INVALID_STATE, 4)
+     VALUE(INVALID_STATE, 5)
 
 );
 

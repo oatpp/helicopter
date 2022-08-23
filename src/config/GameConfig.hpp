@@ -43,6 +43,11 @@ class GameConfigDto : public oatpp::DTO {
   DTO_INIT(GameConfigDto, DTO)
 
   /**
+   * Game ID.
+   */
+  DTO_FIELD(String, gameId);
+
+  /**
    * Host peer can't change.
    * If host peer disconnects the game is over and all other peers are dropped.
    */
@@ -63,6 +68,17 @@ class GameConfigDto : public oatpp::DTO {
    * If exceeded messages are dropped.
    */
   DTO_FIELD(UInt32, maxQueuedMessages) = 10;
+
+  /**
+   * How often should server ping client.
+   */
+  DTO_FIELD(UInt64, pingIntervalMillis) = 5 * 1000; // 5 seconds
+
+  /**
+   * A failed ping is ping to which server receives no response in a 'pingIntervalMillis' interval.
+   * If number of failed pings for a peer reaches 'maxFailedPings' in a row then peer is dropped.
+   */
+  DTO_FIELD(UInt64, maxFailedPings) = 2;
 
 };
 
@@ -85,7 +101,7 @@ public:
    * @param gameId
    * @param config
    */
-  void putGameConfig(const oatpp::String& gameId, const oatpp::Object<GameConfigDto>& config);
+  void putGameConfig(const oatpp::Object<GameConfigDto>& config);
 
   /**
    * Get game config

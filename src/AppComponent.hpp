@@ -114,7 +114,8 @@ public:
   OATPP_CREATE_COMPONENT(std::shared_ptr<GameConfig>, gameConfig)([] {
     auto config = std::make_shared<GameConfig>(nullptr);
     auto testGame1 = GameConfigDto::createShared();
-    config->putGameConfig("snake", testGame1);
+    testGame1->gameId = "snake";
+    config->putGameConfig(testGame1);
     return config;
   }());
 

@@ -15,6 +15,8 @@ add_library(${project_name}-lib
         src/controller/ClientController.hpp
         src/controller/HostController.hpp
         src/dto/DTOs.hpp
+        src/game/Game.cpp
+        src/game/Game.hpp
         src/game/Session.cpp
         src/game/Session.hpp
         src/game/Peer.cpp
