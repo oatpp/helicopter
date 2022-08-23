@@ -112,6 +112,11 @@ public:
   bool queueMessage(const oatpp::Object<MessageDto>& message);
 
   /**
+   * Ping peer.
+   */
+  void ping(const oatpp::String& ocid);
+
+  /**
    * Get the game session the peer associated with.
    * @return
    */

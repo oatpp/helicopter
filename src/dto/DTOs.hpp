@@ -272,6 +272,12 @@ class MessageDto : public oatpp::DTO {
       case MessageCodes::OUTGOING_HELLO:
         return oatpp::Object<HelloMessageDto>::Class::getType();
 
+      case MessageCodes::OUTGOING_PING:
+        return oatpp::Int64::Class::getType();
+
+      case MessageCodes::INCOMING_PONG:
+        return oatpp::Int64::Class::getType();
+
       case MessageCodes::OUTGOING_ERROR:
         return oatpp::Object<ErrorDto>::Class::getType();
 

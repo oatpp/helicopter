@@ -166,6 +166,35 @@ bool Peer::queueMessage(const oatpp::Object<MessageDto>& message) {
   return false;
 }
 
+void Peer::ping(const oatpp::String& ocid) {
+
+  class PingCoroutine : public oatpp::async::Coroutine<PingCoroutine> {
+  private:
+    oatpp::async::Lock* m_lock;
+    std::shared_ptr<AsyncWebSocket> m_websocket;
+    oatpp::String m_message;
+  public:
+
+    PingCoroutine(oatpp::async::Lock* lock,
+                  const std::shared_ptr<AsyncWebSocket>& websocket,
+                  const oatpp::String& message)
+      : m_lock(lock)
+      , m_websocket(websocket)
+      , m_message(message)
+    {}
+
+    Action act() override {
+      return oatpp::async::synchronize(m_lock, m_websocket->sendOneFrameTextAsync(m_message)).next(finish());
+    }
+
+  };
+
+  auto message = MessageDto::createShared(MessageCodes::OUTGOING_PING, nullptr, ocid);
+
+  m_asyncExecutor->execute<PingCoroutine>(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+
+}
+
 std::shared_ptr<Session> Peer::getGameSession() {
   return m_gameSession;
 }

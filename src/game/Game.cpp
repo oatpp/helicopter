@@ -48,13 +48,14 @@ void Game::startPinger() {
 
       std::lock_guard<std::mutex> lock(m_state->mutex);
 
-      if(!m_state->isPingerActive) {
+      if(m_state->sessions.empty()) {
         m_state->isPingerActive = false;
+        OATPP_LOGD("Pinger", "Stopped")
         return finish();
       }
 
       for(auto& session : m_state->sessions) {
-        // pingAllPeers;
+        session.second->pingAllPeers();
       }
 
       return waitRepeat(std::chrono::milliseconds(m_state->config->pingIntervalMillis));
@@ -64,6 +65,7 @@ void Game::startPinger() {
   };
 
   if(!m_state->isPingerActive) {
+    OATPP_LOGD("Pinger", "Started")
     m_state->isPingerActive = true;
     m_asyncExecutor->execute<Pinger>(m_state);
   }

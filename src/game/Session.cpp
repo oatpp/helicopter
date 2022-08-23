@@ -26,6 +26,8 @@
 
 #include "Session.hpp"
 
+#include "oatpp/core/utils/ConversionUtils.hpp"
+
 Session::Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& config)
   : m_id(id)
   , m_config(config)
@@ -122,4 +124,15 @@ std::vector<std::shared_ptr<Peer>> Session::getPeers(const oatpp::Vector<oatpp::
 
 v_int64 Session::generateNewPeerId() {
   return m_peerIdCounter ++;
+}
+
+void Session::pingAllPeers() {
+
+  auto ocid = oatpp::utils::conversion::int64ToStr(oatpp::base::Environment::getMicroTickCount());
+
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  for(auto& peer : m_peers) {
+    peer.second->ping(ocid);
+  }
+
 }

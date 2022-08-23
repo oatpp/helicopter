@@ -58,6 +58,8 @@ public:
 
   v_int64 generateNewPeerId();
 
+  void pingAllPeers();
+
 };
 
 
