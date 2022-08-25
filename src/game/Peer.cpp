@@ -36,8 +36,9 @@ Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
   , m_gameSession(gameSession)
   , m_peerId(peerId)
   , m_messageQueue(std::make_shared<MessageQueue>())
-  , m_pingTime(0)
+  , m_pingTime(-1)
   , m_failedPings(0)
+  , m_lastPingTimestamp(-1)
 {}
 
 oatpp::async::CoroutineStarter Peer::sendMessageAsync(const oatpp::Object<MessageDto>& message) {
@@ -63,7 +64,12 @@ oatpp::async::CoroutineStarter Peer::sendMessageAsync(const oatpp::Object<Messag
 
   };
 
-  return SendMessageCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+  std::lock_guard<std::mutex> socketLock(m_socketMutex);
+  if (m_socket) {
+    return SendMessageCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+  }
+
+  return nullptr;
 
 }
 
@@ -108,7 +114,12 @@ oatpp::async::CoroutineStarter Peer::sendErrorAsync(const oatpp::Object<ErrorDto
   message->code = MessageCodes::OUTGOING_ERROR;
   message->payload = error;
 
-  return SendErrorCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message), fatal);
+  std::lock_guard<std::mutex> socketLock(m_socketMutex);
+  if (m_socket) {
+    return SendErrorCoroutine::start(&m_writeLock, m_socket, m_objectMapper->writeToString(message), fatal);
+  }
+
+  return nullptr;
 
 }
 
@@ -160,7 +171,10 @@ bool Peer::queueMessage(const oatpp::Object<MessageDto>& message) {
       m_messageQueue->queue.push_front(message);
       if (!m_messageQueue->active) {
         m_messageQueue->active = true;
-        m_asyncExecutor->execute<SendMessageCoroutine>(m_objectMapper, &m_writeLock, m_socket, m_messageQueue);
+        std::lock_guard<std::mutex> socketLock(m_socketMutex);
+        if (m_socket) {
+          m_asyncExecutor->execute<SendMessageCoroutine>(m_objectMapper, &m_writeLock, m_socket, m_messageQueue);
+        }
       }
       return true;
     }
@@ -193,7 +207,10 @@ void Peer::ping(v_int64 timestampMicroseconds) {
 
   auto message = MessageDto::createShared(MessageCodes::OUTGOING_PING, oatpp::Int64(timestampMicroseconds));
 
-  m_asyncExecutor->execute<PingCoroutine>(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+  std::lock_guard<std::mutex> socketLock(m_socketMutex);
+  if (m_socket) {
+    m_asyncExecutor->execute<PingCoroutine>(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+  }
 
 }
 
@@ -206,14 +223,35 @@ v_int64 Peer::getPeerId() {
 }
 
 void Peer::invalidateSocket() {
-  if(m_socket) {
-    {
-      std::lock_guard<std::mutex> lock(m_messageQueue->mutex);
-      m_messageQueue->queue.clear();
+  {
+    std::lock_guard<std::mutex> socketLock(m_socketMutex);
+    if (m_socket) {
+      m_socket->getConnection().invalidate();
+      m_socket.reset();
     }
-    m_socket->getConnection().invalidate();
   }
-  m_socket.reset();
+
+  {
+    std::lock_guard<std::mutex> lock(m_messageQueue->mutex);
+    m_messageQueue->queue.clear();
+  }
+}
+
+void Peer::checkPingsRules(const v_int64 currentPingSessionTimestamp) {
+
+  std::lock_guard<std::mutex> pingLock(m_pingMutex);
+
+  if(m_lastPingTimestamp != currentPingSessionTimestamp) {
+    m_failedPings ++;
+  }
+
+  OATPP_LOGD("Peer", "failed pings=%d", m_failedPings)
+
+  if (m_failedPings >= m_gameSession->getConfig()->maxFailedPings) {
+    OATPP_LOGD("Peer", "maxFailedPings exceeded. PeerId=%lld. Peer dropped.", m_peerId);
+    invalidateSocket();
+  }
+
 }
 
 oatpp::async::CoroutineStarter Peer::handlePong(const oatpp::Object<MessageDto>& message) {
@@ -224,7 +262,16 @@ oatpp::async::CoroutineStarter Peer::handlePong(const oatpp::Object<MessageDto>&
     return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Message MUST contain 'payload.'"));
   }
 
-  // TODO check pong
+  v_int64 pt = m_gameSession->reportPeerPong(m_peerId, timestamp);
+
+  {
+    std::lock_guard<std::mutex> pingLock(m_pingMutex);
+    m_pingTime = pt;
+    if (m_pingTime >= 0) {
+      m_failedPings = 0;
+      m_lastPingTimestamp = timestamp;
+    }
+  }
 
   return nullptr;
 }

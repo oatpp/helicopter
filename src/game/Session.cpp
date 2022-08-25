@@ -32,6 +32,10 @@ Session::Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& co
   : m_id(id)
   , m_config(config)
   , m_peerIdCounter(0)
+  , m_pingCurrentTimestamp(-1)
+  , m_pingBestTime(-1)
+  , m_pingBestPeerId(-1)
+  , m_pingBestPeerSinceTimestamp(-1)
 {}
 
 oatpp::String Session::getId() {
@@ -126,13 +130,55 @@ v_int64 Session::generateNewPeerId() {
   return m_peerIdCounter ++;
 }
 
+void Session::checkAllPeersPings() {
+
+  v_int64 currentTimestamp;
+  {
+    std::lock_guard<std::mutex> lock(m_pingMutex);
+    currentTimestamp = m_pingCurrentTimestamp;
+  }
+
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+  for(auto& peer : m_peers) {
+    peer.second->checkPingsRules(currentTimestamp);
+  }
+
+}
+
 void Session::pingAllPeers() {
 
   auto timestamp = oatpp::base::Environment::getMicroTickCount();
+
+  {
+    std::lock_guard<std::mutex> lock(m_pingMutex);
+    m_pingCurrentTimestamp = timestamp;
+  }
 
   std::lock_guard<std::mutex> lock(m_peersMutex);
   for(auto& peer : m_peers) {
     peer.second->ping(timestamp);
   }
+
+}
+
+v_int64 Session::reportPeerPong(v_int64 peerId, v_int64 timestamp) {
+
+  std::lock_guard<std::mutex> lock(m_pingMutex);
+  if(timestamp != m_pingCurrentTimestamp) {
+    return -1;
+  }
+
+  v_int64 pingTime = oatpp::base::Environment::getMicroTickCount() - timestamp;
+
+  if(m_pingBestTime < 0 || m_pingBestTime > pingTime) {
+    m_pingBestTime = pingTime;
+    if(m_pingBestPeerId != peerId) {
+      m_pingBestPeerId = peerId;
+      m_pingBestPeerSinceTimestamp = timestamp;
+      OATPP_LOGD("Session", "new best peer=%lld, ping=%lld", peerId, pingTime)
+    }
+  }
+
+  return pingTime;
 
 }

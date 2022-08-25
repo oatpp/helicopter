@@ -55,6 +55,10 @@ void Game::startPinger() {
       }
 
       for(auto& session : m_state->sessions) {
+        session.second->checkAllPeersPings();
+      }
+
+      for(auto& session : m_state->sessions) {
         session.second->pingAllPeers();
       }
 

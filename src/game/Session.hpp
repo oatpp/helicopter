@@ -38,6 +38,12 @@ private:
   std::unordered_map<v_int64, std::shared_ptr<Peer>> m_peers;
   std::shared_ptr<Peer> m_host;
   std::mutex m_peersMutex;
+private:
+  v_int64 m_pingCurrentTimestamp;
+  v_int64 m_pingBestTime;
+  v_int64 m_pingBestPeerId;
+  v_int64 m_pingBestPeerSinceTimestamp;
+  std::mutex m_pingMutex;
 public:
 
   Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& config);
@@ -58,7 +64,18 @@ public:
 
   v_int64 generateNewPeerId();
 
+  void checkAllPeersPings();
+
   void pingAllPeers();
+
+  /**
+   * Report pong from peer.
+   * @param peerId
+   * @param timestamp - timestamp reported in the pong (payload). If timestamp doesn't equal to the latest ping
+   * timestamp - ping considered to be failed.
+   * @return - peer's ping in microseconds or `-1` if ping failed.
+   */
+  v_int64 reportPeerPong(v_int64 peerId, v_int64 timestamp);
 
 };
 

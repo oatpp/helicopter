@@ -68,13 +68,15 @@ private:
 
 private:
   std::shared_ptr<AsyncWebSocket> m_socket;
+  std::mutex m_socketMutex;
   std::shared_ptr<Session> m_gameSession;
   v_int64 m_peerId;
-private:
   std::shared_ptr<MessageQueue> m_messageQueue;
 private:
   v_int64 m_pingTime;
-  v_int32 m_failedPings;
+  v_int64 m_failedPings;
+  v_int64 m_lastPingTimestamp;
+  std::mutex m_pingMutex;
 private:
 
   /* Inject application components */
@@ -119,6 +121,12 @@ public:
    * Ping peer.
    */
   void ping(const v_int64 timestampMicroseconds);
+
+  /**
+   * Check ping rules.
+   * @param currentPingSessionTimestamp
+   */
+  void checkPingsRules(const v_int64 currentPingSessionTimestamp);
 
   /**
    * Get the game session the peer associated with.
