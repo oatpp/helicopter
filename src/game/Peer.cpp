@@ -36,6 +36,8 @@ Peer::Peer(const std::shared_ptr<AsyncWebSocket>& socket,
   , m_gameSession(gameSession)
   , m_peerId(peerId)
   , m_messageQueue(std::make_shared<MessageQueue>())
+  , m_pingTime(0)
+  , m_failedPings(0)
 {}
 
 oatpp::async::CoroutineStarter Peer::sendMessageAsync(const oatpp::Object<MessageDto>& message) {
@@ -166,7 +168,7 @@ bool Peer::queueMessage(const oatpp::Object<MessageDto>& message) {
   return false;
 }
 
-void Peer::ping(const oatpp::String& ocid) {
+void Peer::ping(v_int64 timestampMicroseconds) {
 
   class PingCoroutine : public oatpp::async::Coroutine<PingCoroutine> {
   private:
@@ -189,7 +191,7 @@ void Peer::ping(const oatpp::String& ocid) {
 
   };
 
-  auto message = MessageDto::createShared(MessageCodes::OUTGOING_PING, nullptr, ocid);
+  auto message = MessageDto::createShared(MessageCodes::OUTGOING_PING, oatpp::Int64(timestampMicroseconds));
 
   m_asyncExecutor->execute<PingCoroutine>(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
 
@@ -212,6 +214,19 @@ void Peer::invalidateSocket() {
     m_socket->getConnection().invalidate();
   }
   m_socket.reset();
+}
+
+oatpp::async::CoroutineStarter Peer::handlePong(const oatpp::Object<MessageDto>& message) {
+
+  auto timestamp = message->payload.retrieve<oatpp::Int64>();
+
+  if(!timestamp) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Message MUST contain 'payload.'"));
+  }
+
+  // TODO check pong
+
+  return nullptr;
 }
 
 oatpp::async::CoroutineStarter Peer::handleBroadcast(const oatpp::Object<MessageDto>& message) {
@@ -292,9 +307,15 @@ oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDt
   }
 
   switch (*message->code) {
+
+    case MessageCodes::INCOMING_PONG: return handlePong(message);
     case MessageCodes::INCOMING_BROADCAST: return handleBroadcast(message);
     case MessageCodes::INCOMING_DIRECT_MESSAGE: return handleDirectMessage(message);
     case MessageCodes::INCOMING_CLIENT_MESSAGE: return handleClientMessage(message);
+
+    default:
+      return sendErrorAsync(ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Invalid operation code."));
+
   }
   
   return nullptr;

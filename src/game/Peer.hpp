@@ -73,6 +73,9 @@ private:
 private:
   std::shared_ptr<MessageQueue> m_messageQueue;
 private:
+  v_int64 m_pingTime;
+  v_int32 m_failedPings;
+private:
 
   /* Inject application components */
   OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
@@ -80,6 +83,7 @@ private:
 
 private:
 
+  CoroutineStarter handlePong(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleBroadcast(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleDirectMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleClientMessage(const oatpp::Object<MessageDto>& message);
@@ -114,7 +118,7 @@ public:
   /**
    * Ping peer.
    */
-  void ping(const oatpp::String& ocid);
+  void ping(const v_int64 timestampMicroseconds);
 
   /**
    * Get the game session the peer associated with.

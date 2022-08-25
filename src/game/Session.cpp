@@ -128,11 +128,11 @@ v_int64 Session::generateNewPeerId() {
 
 void Session::pingAllPeers() {
 
-  auto ocid = oatpp::utils::conversion::int64ToStr(oatpp::base::Environment::getMicroTickCount());
+  auto timestamp = oatpp::base::Environment::getMicroTickCount();
 
   std::lock_guard<std::mutex> lock(m_peersMutex);
   for(auto& peer : m_peers) {
-    peer.second->ping(ocid);
+    peer.second->ping(timestamp);
   }
 
 }
