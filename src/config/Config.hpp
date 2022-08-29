@@ -49,16 +49,16 @@ class TLSConfigDto : public oatpp::DTO {
   /**
    * Path to full chain file.
    */
-  DTO_FIELD(String, fullchainFile);
+  DTO_FIELD(String, chainFile);
 
 };
 
 /**
  * Config where to serve controller's endpoints.
  */
-class ControllerConfigDto : public oatpp::DTO {
+class ServerConfigDto : public oatpp::DTO {
 
-  DTO_INIT(ControllerConfigDto, DTO)
+  DTO_INIT(ServerConfigDto, DTO)
 
   /**
    * Host
@@ -83,14 +83,14 @@ public:
   DTO_INIT(ConfigDto, DTO)
 
   /**
-   * Config for Host endpoints (create game functionality).
+   * Config for Host API Server (create game functionality).
    */
-  DTO_FIELD(Object<ControllerConfigDto>, hosts);
+  DTO_FIELD(Object<ServerConfigDto>, hostAPIServer);
 
   /**
-   * Config for Client endpoints (join game functionality).
+   * Config for Client API Server (join game functionality).
    */
-  DTO_FIELD(Object<ControllerConfigDto>, clients);
+  DTO_FIELD(Object<ServerConfigDto>, clientAPIServer);
 
   /**
    * Path to games config file.

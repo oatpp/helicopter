@@ -24,7 +24,9 @@ add_library(${project_name}-lib
         src/game/Registry.cpp
         src/game/Registry.hpp
         src/AppComponent.hpp
-        src/Constants.hpp)
+        src/Constants.hpp
+        src/Runner.cpp
+        src/Runner.hpp)
 
 ## link libs
 

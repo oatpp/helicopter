@@ -24,8 +24,7 @@
  *
  ***************************************************************************/
 
-#include "controller/HostController.hpp"
-#include "controller/ClientController.hpp"
+#include "./Runner.hpp"
 
 #include "./AppComponent.hpp"
 
@@ -38,29 +37,12 @@ void run(const oatpp::base::CommandLineArguments& args) {
   /* Register Components in scope of run() method */
   AppComponent components(args);
 
-  /* Get router component */
-  OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
+  Runner runner(OATPP_GET_COMPONENT(oatpp::Object<ConfigDto>),
+                OATPP_GET_COMPONENT(std::shared_ptr<oatpp::async::Executor>));
 
-  /* Create HostController and add all of its endpoints to router */
-  router->addController(std::make_shared<HostController>());
-  router->addController(std::make_shared<ClientController>());
+  runner.start();
 
-  /* Get connection handler component */
-  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler, Constants::COMPONENT_REST_API);
-
-  /* Get connection provider component */
-  OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, connectionProvider);
-
-  /* Create server which takes provided TCP connections and passes them to HTTP connection handler */
-  oatpp::network::Server server(connectionProvider, connectionHandler);
-
-  std::thread serverThread([&server]{
-    server.run();
-  });
-
-  OATPP_COMPONENT(oatpp::Object<ConfigDto>, appConfig);
-
-  serverThread.join();
+  runner.join();
 
 }
 

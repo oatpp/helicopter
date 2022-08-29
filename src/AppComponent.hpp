@@ -67,10 +67,20 @@ public:
    * Create config component
    */
   OATPP_CREATE_COMPONENT(oatpp::Object<ConfigDto>, appConfig)([this] {
-
     auto config = ConfigDto::createShared();
-    return config;
 
+    auto hostServer = ServerConfigDto::createShared();
+    hostServer->host = "0.0.0.0";
+    hostServer->port = 8000;
+
+    auto clientServer = ServerConfigDto::createShared();
+    clientServer->host = "0.0.0.0";
+    clientServer->port = 8001;
+
+    config->hostAPIServer = hostServer;
+    config->clientAPIServer = clientServer;
+
+    return config;
   }());
 
   /**
@@ -92,34 +102,10 @@ public:
   }());
 
   /**
-   *  Create ConnectionProvider component which listens on the port
-   */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)([] {
-
-    OATPP_COMPONENT(oatpp::Object<ConfigDto>, appConfig);
-
-    std::shared_ptr<oatpp::network::ServerConnectionProvider> result;
-
-    result = oatpp::network::tcp::server::ConnectionProvider::createShared({"0.0.0.0", 8000, oatpp::network::Address::IP_4});
-
-    return result;
-
-  }());
-
-  /**
    *  Create Router component
    */
   OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, httpRouter)([] {
     return oatpp::web::server::HttpRouter::createShared();
-  }());
-
-  /**
-   *  Create ConnectionHandler component which uses Router component to route requests
-   */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, serverConnectionHandler)(Constants::COMPONENT_REST_API, [] {
-    OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router); // get Router component
-    OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, executor); // get Async executor component
-    return oatpp::web::server::AsyncHttpConnectionHandler::createShared(router, executor);
   }());
 
   /**
