@@ -10,8 +10,8 @@ include_directories(src)
 
 add_library(${project_name}-lib
         src/config/Config.hpp
-        src/config/GameConfig.cpp
-        src/config/GameConfig.hpp
+        src/config/GamesConfig.cpp
+        src/config/GamesConfig.hpp
         src/controller/ClientController.hpp
         src/controller/HostController.hpp
         src/dto/DTOs.hpp

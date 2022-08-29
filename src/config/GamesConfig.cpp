@@ -24,9 +24,9 @@
  *
  ***************************************************************************/
 
-#include "GameConfig.hpp"
+#include "GamesConfig.hpp"
 
-GameConfig::GameConfig(const oatpp::String& configFilename)
+GamesConfig::GamesConfig(const oatpp::String& configFilename)
   : m_configFile(configFilename)
 {
   if(configFilename) {
@@ -35,7 +35,7 @@ GameConfig::GameConfig(const oatpp::String& configFilename)
   }
 }
 
-void GameConfig::putGameConfig(const oatpp::Object<GameConfigDto>& config) {
+void GamesConfig::putGameConfig(const oatpp::Object<GameConfigDto>& config) {
   std::lock_guard<std::mutex> lock(m_mutex);
   if(m_games == nullptr) {
     m_games = oatpp::UnorderedFields<oatpp::Object<GameConfigDto>>({});
@@ -43,7 +43,7 @@ void GameConfig::putGameConfig(const oatpp::Object<GameConfigDto>& config) {
   m_games->insert({config->gameId, config});
 }
 
-oatpp::Object<GameConfigDto> GameConfig::getGameConfig(const oatpp::String& gameId) {
+oatpp::Object<GameConfigDto> GamesConfig::getGameConfig(const oatpp::String& gameId) {
   std::lock_guard<std::mutex> lock(m_mutex);
   if(m_games) {
     auto it = m_games->find(gameId);
@@ -54,7 +54,7 @@ oatpp::Object<GameConfigDto> GameConfig::getGameConfig(const oatpp::String& game
   return nullptr;
 }
 
-bool GameConfig::save() {
+bool GamesConfig::save() {
   oatpp::String json;
   {
     std::lock_guard<std::mutex> lock(m_mutex);

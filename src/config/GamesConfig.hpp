@@ -24,8 +24,8 @@
  *
  ***************************************************************************/
 
-#ifndef HELICOPTER_GAMECONFIG_HPP
-#define HELICOPTER_GAMECONFIG_HPP
+#ifndef HELICOPTER_GAMESCONFIG_HPP
+#define HELICOPTER_GAMESCONFIG_HPP
 
 
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
@@ -82,7 +82,7 @@ class GameConfigDto : public oatpp::DTO {
 
 };
 
-class GameConfig {
+class GamesConfig {
 private:
   oatpp::String m_configFile;
   oatpp::parser::json::mapping::ObjectMapper m_mapper;
@@ -94,7 +94,7 @@ public:
    * Path to config file containing configs for games.
    * @param configFilename
    */
-  GameConfig(const oatpp::String& configFilename);
+  GamesConfig(const oatpp::String& configFilename);
 
   /**
    * Put game config
@@ -119,4 +119,4 @@ public:
 
 #include OATPP_CODEGEN_END(DTO)
 
-#endif //HELICOPTER_GAMECONFIG_HPP
+#endif //HELICOPTER_GAMESCONFIG_HPP

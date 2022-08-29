@@ -28,7 +28,7 @@
 #define Helicopter_game_Game_hpp
 
 #include "./Session.hpp"
-#include "config/GameConfig.hpp"
+#include "config/GamesConfig.hpp"
 
 class Game {
 private:

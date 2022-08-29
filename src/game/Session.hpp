@@ -28,7 +28,7 @@
 #define Helicopter_game_Session_hpp
 
 #include "Peer.hpp"
-#include "config/GameConfig.hpp"
+#include "config/GamesConfig.hpp"
 
 class Session {
 private:

@@ -30,7 +30,7 @@
 #include "Constants.hpp"
 
 #include "config/Config.hpp"
-#include "config/GameConfig.hpp"
+#include "config/GamesConfig.hpp"
 
 #include "dto/DTOs.hpp"
 

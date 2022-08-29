@@ -28,7 +28,7 @@
 #define AppComponent_hpp
 
 #include "config/Config.hpp"
-#include "config/GameConfig.hpp"
+#include "config/GamesConfig.hpp"
 
 #include "game/Registry.hpp"
 
@@ -69,41 +69,6 @@ public:
   OATPP_CREATE_COMPONENT(oatpp::Object<ConfigDto>, appConfig)([this] {
 
     auto config = ConfigDto::createShared();
-
-    config->host = std::getenv("EXTERNAL_ADDRESS");
-    if (!config->host) {
-      config->host = m_cmdArgs.getNamedArgumentValue("--host", "localhost");
-    }
-
-    const char* portText = std::getenv("EXTERNAL_PORT");
-    if(!portText) {
-      portText = m_cmdArgs.getNamedArgumentValue("--port", "8443");
-    }
-
-    bool success;
-    auto port = oatpp::utils::conversion::strToUInt32(portText, success);
-    if(!success || port > 65535) {
-      throw std::runtime_error("Invalid port!");
-    }
-    config->port = (v_uint16) port;
-
-    config->tlsPrivateKeyPath = std::getenv("TLS_FILE_PRIVATE_KEY");
-    if(!config->tlsPrivateKeyPath) {
-      config->tlsPrivateKeyPath = m_cmdArgs.getNamedArgumentValue("--tls-key", "" CERT_PEM_PATH);
-    }
-
-    config->tlsCertificateChainPath = std::getenv("TLS_FILE_CERT_CHAIN");
-    if(!config->tlsCertificateChainPath) {
-      config->tlsCertificateChainPath = m_cmdArgs.getNamedArgumentValue("--tls-chain", "" CERT_CRT_PATH);
-    }
-
-    config->statisticsUrl = std::getenv("URL_STATS_PATH");
-    if(!config->statisticsUrl) {
-      config->statisticsUrl = m_cmdArgs.getNamedArgumentValue("--url-stats", "admin/stats.json");
-    }
-
-
-
     return config;
 
   }());
@@ -111,8 +76,8 @@ public:
   /**
    * Game configs
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<GameConfig>, gameConfig)([] {
-    auto config = std::make_shared<GameConfig>(nullptr);
+  OATPP_CREATE_COMPONENT(std::shared_ptr<GamesConfig>, gameConfig)([] {
+    auto config = std::make_shared<GamesConfig>(nullptr);
     auto testGame1 = GameConfigDto::createShared();
     testGame1->gameId = "snake";
     config->putGameConfig(testGame1);
@@ -135,18 +100,7 @@ public:
 
     std::shared_ptr<oatpp::network::ServerConnectionProvider> result;
 
-    if(appConfig->useTLS) {
-
-      OATPP_LOGD("oatpp::libressl::Config", "key_path='%s'", appConfig->tlsPrivateKeyPath->c_str());
-      OATPP_LOGD("oatpp::libressl::Config", "chn_path='%s'", appConfig->tlsCertificateChainPath->c_str());
-
-      auto config = oatpp::openssl::Config::createDefaultServerConfigShared(
-              appConfig->tlsCertificateChainPath->c_str(),
-              appConfig->tlsPrivateKeyPath->c_str());
-      result = oatpp::openssl::server::ConnectionProvider::createShared(config, {"0.0.0.0", appConfig->port, oatpp::network::Address::IP_4});
-    } else {
-      result = oatpp::network::tcp::server::ConnectionProvider::createShared({"0.0.0.0", appConfig->port, oatpp::network::Address::IP_4});
-    }
+    result = oatpp::network::tcp::server::ConnectionProvider::createShared({"0.0.0.0", 8000, oatpp::network::Address::IP_4});
 
     return result;
 

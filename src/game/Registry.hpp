@@ -50,7 +50,7 @@ private:
 private:
   /* Inject application components */
   OATPP_COMPONENT(oatpp::Object<ConfigDto>, m_config);
-  OATPP_COMPONENT(std::shared_ptr<GameConfig>, m_gameConfig);
+  OATPP_COMPONENT(std::shared_ptr<GamesConfig>, m_gameConfig);
   OATPP_COMPONENT(std::shared_ptr<oatpp::async::Executor>, m_asyncExecutor);
   OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, m_objectMapper, Constants::COMPONENT_WS_API);
 private:

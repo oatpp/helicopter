@@ -34,75 +34,68 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
+/**
+ * TLS config.
+ */
+class TLSConfigDto : public oatpp::DTO {
+
+  DTO_INIT(TLSConfigDto, DTO)
+
+  /**
+   * Path to private key file.
+   */
+  DTO_FIELD(String, pkFile);
+
+  /**
+   * Path to full chain file.
+   */
+  DTO_FIELD(String, fullchainFile);
+
+};
+
+/**
+ * Config where to serve controller's endpoints.
+ */
+class ControllerConfigDto : public oatpp::DTO {
+
+  DTO_INIT(ControllerConfigDto, DTO)
+
+  /**
+   * Host
+   */
+  DTO_FIELD(String, host);
+
+  /**
+   * Port
+   */
+  DTO_FIELD(UInt16, port);
+
+  /**
+   * TLS config. If null - do not use TLS.
+   */
+  DTO_FIELD(Object<TLSConfigDto>, tls);
+
+};
+
 class ConfigDto : public oatpp::DTO {
 public:
 
   DTO_INIT(ConfigDto, DTO)
 
-  DTO_FIELD(String, statisticsUrl);
-
-  DTO_FIELD(String, host);
-  DTO_FIELD(UInt16, port);
-  DTO_FIELD(Boolean, useTLS) = false;
+  /**
+   * Config for Host endpoints (create game functionality).
+   */
+  DTO_FIELD(Object<ControllerConfigDto>, hosts);
 
   /**
-   * Path to TLS private key file.
+   * Config for Client endpoints (join game functionality).
    */
-  DTO_FIELD(String, tlsPrivateKeyPath);
+  DTO_FIELD(Object<ControllerConfigDto>, clients);
 
   /**
-   * Path to TLS certificate chain file.
+   * Path to games config file.
    */
-  DTO_FIELD(String, tlsCertificateChainPath);
-
-public:
-
-  oatpp::String getHostString() {
-    oatpp::data::stream::BufferOutputStream stream(256);
-    v_uint16 defPort;
-    if(useTLS) {
-      defPort = 443;
-    } else {
-      defPort = 80;
-    }
-    stream << host;
-    if(!port || defPort != port) {
-      stream << ":" << port;
-    }
-    return stream.toString();
-  }
-
-  oatpp::String getCanonicalBaseUrl() {
-    oatpp::data::stream::BufferOutputStream stream(256);
-    v_uint16 defPort;
-    if(useTLS) {
-      stream << "https://";
-      defPort = 443;
-    } else {
-      stream << "http://";
-      defPort = 80;
-    }
-    stream << host;
-    if(!port || defPort != port) {
-      stream << ":" << port;
-    }
-    return stream.toString();
-  }
-
-  oatpp::String getWebsocketBaseUrl() {
-    oatpp::data::stream::BufferOutputStream stream(256);
-    if(useTLS) {
-      stream << "wss://";
-    } else {
-      stream << "ws://";
-    }
-    stream << host << ":" << port;
-    return stream.toString();
-  }
-
-  oatpp::String getStatsUrl() {
-    return getCanonicalBaseUrl() + "/" + statisticsUrl;
-  }
+  DTO_FIELD(String, gamesConfigFile);
 
 };
 
