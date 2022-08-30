@@ -118,7 +118,7 @@ public:
   }());
 
   /**
-   *  Create ObjectMapper component to serialize/deserialize DTOs in Contoller's API
+   *  Create ObjectMapper component to serialize/deserialize DTOs in WS communication
    */
   OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, wsApiObjectMapper)(Constants::COMPONENT_WS_API,[] {
     auto mapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
@@ -127,9 +127,9 @@ public:
   }());
 
   /**
-   *  Create chat lobby component.
+   *  Create games sessions Registry component.
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<Registry>, lobby)([] {
+  OATPP_CREATE_COMPONENT(std::shared_ptr<Registry>, gamesSessionsRegistry)([] {
     return std::make_shared<Registry>();
   }());
 
