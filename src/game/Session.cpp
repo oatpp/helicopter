@@ -32,6 +32,7 @@ Session::Session(const oatpp::String& id, const oatpp::Object<GameConfigDto>& co
   : m_id(id)
   , m_config(config)
   , m_peerIdCounter(0)
+  , m_synchronizedEventId(0)
   , m_pingCurrentTimestamp(-1)
   , m_pingBestTime(-1)
   , m_pingBestPeerId(-1)
@@ -124,6 +125,22 @@ std::vector<std::shared_ptr<Peer>> Session::getPeers(const oatpp::Vector<oatpp::
   }
 
   return result;
+}
+
+void Session::broadcastSynchronizedEvent(v_int64 senderId, const oatpp::String& eventData) {
+
+  std::lock_guard<std::mutex> lock(m_peersMutex);
+
+  auto event = OutgoingSynchronizedMessageDto::createShared();
+  event->eventId = m_synchronizedEventId ++;
+  event->peerId = senderId;
+  event->data = eventData;
+
+  auto message = MessageDto::createShared(MessageCodes::OUTGOING_SYNCHRONIZED_EVENT, event);
+  for(auto& peer : m_peers) {
+    peer.second->queueMessage(message);
+  }
+
 }
 
 v_int64 Session::generateNewPeerId() {

@@ -35,6 +35,7 @@ private:
   oatpp::String m_id;
   oatpp::Object<GameConfigDto> m_config;
   std::atomic<v_int64> m_peerIdCounter;
+  v_int64 m_synchronizedEventId; // synchronized by m_peersMutex
   std::unordered_map<v_int64, std::shared_ptr<Peer>> m_peers;
   std::shared_ptr<Peer> m_host;
   std::mutex m_peersMutex;
@@ -61,6 +62,8 @@ public:
 
   std::vector<std::shared_ptr<Peer>> getAllPeers();
   std::vector<std::shared_ptr<Peer>> getPeers(const oatpp::Vector<oatpp::Int64>& peerIds);
+
+  void broadcastSynchronizedEvent(v_int64 senderId, const oatpp::String& eventData);
 
   v_int64 generateNewPeerId();
 

@@ -86,6 +86,18 @@ ENUM(MessageCodes, v_int32,
       */
      VALUE(INCOMING_DIRECT_MESSAGE, 7),
 
+     /**
+      * Peer sends synchronized event. Synchronized event will be broadcasted to ALL peers, including the sender of this event.
+      * All peers are guaranteed to receive synchronized events in the same order except for cases where peer's messages
+      * were discarded due to poor connection (message queue overflow).
+      */
+     VALUE(INCOMING_SYNCHRONIZED_EVENT, 8),
+
+     /**
+      * Server send synchronized event to peer.
+      */
+     VALUE(OUTGOING_SYNCHRONIZED_EVENT, 9),
+
 ///////////////////////////////////////////////////////////////////
 //// 100 - 199 outgoing host messages
 
@@ -228,9 +240,36 @@ class DirectMessageDto : public oatpp::DTO {
 
 };
 
+/**
+ * Outgoing message.
+ */
 class OutgoingMessageDto : public oatpp::DTO {
 
   DTO_INIT(OutgoingMessageDto, DTO)
+
+  /**
+   * peerId of sender
+   */
+  DTO_FIELD(Int64, peerId);
+
+  /**
+   * Message data
+   */
+  DTO_FIELD(String, data);
+
+};
+
+/**
+ * Outgoing synchronized message.
+ */
+class OutgoingSynchronizedMessageDto : public oatpp::DTO {
+
+  DTO_INIT(OutgoingSynchronizedMessageDto, DTO)
+
+  /**
+   * Event Id - event index in the sequence.
+   */
+  DTO_FIELD(Int64, eventId);
 
   /**
    * peerId of sender
@@ -292,6 +331,12 @@ class MessageDto : public oatpp::DTO {
 
       case MessageCodes::INCOMING_DIRECT_MESSAGE:
         return oatpp::Object<DirectMessageDto>::Class::getType();
+
+      case MessageCodes::INCOMING_SYNCHRONIZED_EVENT:
+        return oatpp::String::Class::getType();
+
+      case MessageCodes::OUTGOING_SYNCHRONIZED_EVENT:
+        return oatpp::Object<OutgoingSynchronizedMessageDto>::Class::getType();
 
       case MessageCodes::OUTGOING_HOST_CLIENT_JOINED:
       case MessageCodes::OUTGOING_HOST_CLIENT_LEFT:

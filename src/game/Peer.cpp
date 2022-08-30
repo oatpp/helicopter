@@ -363,6 +363,11 @@ oatpp::async::CoroutineStarter Peer::handleDirectMessage(const oatpp::Object<Mes
 
 }
 
+oatpp::async::CoroutineStarter Peer::handleSynchronizedEvent(const oatpp::Object<MessageDto>& message) {
+  m_gameSession->broadcastSynchronizedEvent(m_peerId, message->payload.retrieve<oatpp::String>());
+  return nullptr;
+}
+
 oatpp::async::CoroutineStarter Peer::handleKickMessage(const oatpp::Object<MessageDto>& message) {
 
   auto host = m_gameSession->getHost();
@@ -426,6 +431,7 @@ oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDt
     case MessageCodes::INCOMING_PONG: return handlePong(message);
     case MessageCodes::INCOMING_BROADCAST: return handleBroadcast(message);
     case MessageCodes::INCOMING_DIRECT_MESSAGE: return handleDirectMessage(message);
+    case MessageCodes::INCOMING_SYNCHRONIZED_EVENT: return handleSynchronizedEvent(message);
     case MessageCodes::INCOMING_HOST_KICK_CLIENTS: return handleKickMessage(message);
     case MessageCodes::INCOMING_CLIENT_MESSAGE: return handleClientMessage(message);
 

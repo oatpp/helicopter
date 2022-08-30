@@ -88,6 +88,7 @@ private:
   CoroutineStarter handlePong(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleBroadcast(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleDirectMessage(const oatpp::Object<MessageDto>& message);
+  CoroutineStarter handleSynchronizedEvent(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleKickMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleClientMessage(const oatpp::Object<MessageDto>& message);
   CoroutineStarter handleMessage(const oatpp::Object<MessageDto>& message);

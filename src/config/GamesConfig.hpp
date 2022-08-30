@@ -67,7 +67,7 @@ class GameConfigDto : public oatpp::DTO {
    * Max number of messages queued for the peer.
    * If exceeded messages are dropped.
    */
-  DTO_FIELD(UInt32, maxQueuedMessages) = 10;
+  DTO_FIELD(UInt32, maxQueuedMessages) = 100;
 
   /**
    * How often should server ping client.
