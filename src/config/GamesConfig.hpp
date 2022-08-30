@@ -78,7 +78,7 @@ class GameConfigDto : public oatpp::DTO {
    * A failed ping is ping to which server receives no response in a 'pingIntervalMillis' interval.
    * If number of failed pings for a peer reaches 'maxFailedPings' in a row then peer is dropped.
    */
-  DTO_FIELD(UInt64, maxFailedPings) = 2;
+  DTO_FIELD(UInt64, maxFailedPings) = 100;
 
 };
 

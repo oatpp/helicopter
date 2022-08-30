@@ -110,7 +110,10 @@ ENUM(MessageCodes, v_int32,
 ///////////////////////////////////////////////////////////////////
 //// 300 - 399 outgoing client messages
 
-     // TODO Add messages here
+    /**
+     * Client was kicked by a host.
+     */
+     VALUE(OUTGOING_CLIENT_KICKED, 300),
 
 ///////////////////////////////////////////////////////////////////
 //// 400 - 499 incoming client messages
@@ -293,6 +296,12 @@ class MessageDto : public oatpp::DTO {
       case MessageCodes::OUTGOING_HOST_CLIENT_JOINED:
       case MessageCodes::OUTGOING_HOST_CLIENT_LEFT:
         return oatpp::Int64::Class::getType();
+
+      case MessageCodes::INCOMING_HOST_KICK_CLIENTS:
+        return oatpp::Vector<oatpp::Int64>::Class::getType();
+
+      case MessageCodes::OUTGOING_CLIENT_KICKED:
+        return oatpp::String::Class::getType();
 
       case MessageCodes::INCOMING_CLIENT_MESSAGE:
         return oatpp::String::Class::getType();

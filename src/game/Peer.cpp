@@ -214,6 +214,43 @@ void Peer::ping(v_int64 timestampMicroseconds) {
 
 }
 
+void Peer::kick() {
+
+  class KickCoroutine : public oatpp::async::Coroutine<KickCoroutine> {
+  private:
+    oatpp::async::Lock* m_lock;
+    std::shared_ptr<AsyncWebSocket> m_websocket;
+    oatpp::String m_message;
+  public:
+
+    KickCoroutine(oatpp::async::Lock* lock,
+                  const std::shared_ptr<AsyncWebSocket>& websocket,
+                  const oatpp::String& message)
+      : m_lock(lock)
+      , m_websocket(websocket)
+      , m_message(message)
+    {}
+
+    Action act() override {
+      return oatpp::async::synchronize(m_lock, m_websocket->sendOneFrameTextAsync(m_message))
+        .next(yieldTo(&KickCoroutine::onMessageSent));
+    }
+
+    Action onMessageSent() {
+      m_websocket->getConnection().invalidate();
+      return finish();
+    }
+
+  };
+
+  auto message = MessageDto::createShared(MessageCodes::OUTGOING_CLIENT_KICKED, oatpp::String("you were kicked."));
+
+  std::lock_guard<std::mutex> socketLock(m_socketMutex);
+  if (m_socket) {
+    m_asyncExecutor->execute<KickCoroutine>(&m_writeLock, m_socket, m_objectMapper->writeToString(message));
+  }
+}
+
 std::shared_ptr<Session> Peer::getGameSession() {
   return m_gameSession;
 }
@@ -326,6 +363,37 @@ oatpp::async::CoroutineStarter Peer::handleDirectMessage(const oatpp::Object<Mes
 
 }
 
+oatpp::async::CoroutineStarter Peer::handleKickMessage(const oatpp::Object<MessageDto>& message) {
+
+  auto host = m_gameSession->getHost();
+  if(host == nullptr) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::INVALID_STATE, "There is no game host."));
+  }
+
+  if(host->getPeerId() != m_peerId) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::OPERATION_NOT_PERMITTED, "Only Host peer can kick others."));
+  }
+
+  auto ids = message->payload.retrieve<oatpp::Vector<oatpp::Int64>>();
+
+  if(!ids || ids->empty()) {
+    return sendErrorAsync(ErrorDto::createShared(ErrorCodes::BAD_MESSAGE, "Payload MUST contain array of peerIds to kick from session.'"));
+  }
+
+  auto peers = m_gameSession->getPeers(ids);
+
+  for(auto peer : peers) {
+
+    if(peer->getPeerId() != m_peerId) {
+      peer->kick();
+    }
+
+  }
+
+  return nullptr;
+
+}
+
 oatpp::async::CoroutineStarter Peer::handleClientMessage(const oatpp::Object<MessageDto>& message) {
 
   auto host = m_gameSession->getHost();
@@ -358,6 +426,7 @@ oatpp::async::CoroutineStarter Peer::handleMessage(const oatpp::Object<MessageDt
     case MessageCodes::INCOMING_PONG: return handlePong(message);
     case MessageCodes::INCOMING_BROADCAST: return handleBroadcast(message);
     case MessageCodes::INCOMING_DIRECT_MESSAGE: return handleDirectMessage(message);
+    case MessageCodes::INCOMING_HOST_KICK_CLIENTS: return handleKickMessage(message);
     case MessageCodes::INCOMING_CLIENT_MESSAGE: return handleClientMessage(message);
 
     default:
