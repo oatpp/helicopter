@@ -62,5 +62,17 @@ Where:
 - `ocid` - Operation Correlation ID - used to correlate operation and an error message.
 - `payload` - message payload
 
+##### Message Codes
+
+Legend:
+
+- :arrow_left: - incoming
+- :arrow_right: - outgoing
+- `H` - Game Host - can send this message
+- `C` - Game Client - can send this message
+- `HC` - both Game Host and a Game Client can send this message
+
+|code|direction|client role|description|
+|---|---|---|---|
 
 
