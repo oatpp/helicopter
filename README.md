@@ -72,7 +72,7 @@ Legend:
 - `C` - Game Client - can send this message
 - `HC` - both Game Host and a Game Client can send this message
 
-|code|direction|client role|description|
-|---|---|---|---|
-
+|code|direction|peer role|description|payload type|
+|:---:|:---:|:---:|:---:|:---:|
+|0|:arrow_left:|`HC`|Hello message. <br> Once connected client will receive this message providing client with its `peerId` and its role (`isHost` - `true` or `false`) |object: `{"peerId": integer, "isHost": boolean}`|
 
