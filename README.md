@@ -43,6 +43,24 @@ Where:
 - `gameId` is the id of the game from game config - stored on Helicopter server.
 - `sessionId` is an identifier of the game session created by the `Game Host`.
 
+#### Messaging
+
+Helicopter server is using `JSON` for messaging.
+
+All messages have the same structure (both incoming and outgoing):
+
+```json
+{
+  "code":    integer,
+  "ocid":    string or null,
+  "payload": content type depends on message code
+}
+```
+
+Where:
+- `code` - operation/message code.
+- `ocid` - Operation Correlation ID - used to correlate operation and an error message.
+- `payload` - message payload
 
 
 
