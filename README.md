@@ -85,3 +85,7 @@ Legend:
 |9|:arrow_left:|`HC`|**Incoming Synchronized Event**|object: `{"eventId": integer, "peerId": integer, "data": string}`|
 |101|:arrow_left:|H|**Client Joined Game** <br> Game Host receives this message when a new client joined the game. Payload is the `peerId` of new client.| `integer`|
 |102|:arrow_left:|H|**Client Left Game** <br> Game Host receives this message when client disconnects from the game session. Payload is the `peerId` of new client.|`integer`|
+|200|:arrow_right:|H|**Kick Client** <br> Game Host can kick client or a group of clients from game session.|list: `[integer, ...]`|
+|300|:arrow_left:|C|**Kicked** <br> Game Client kicked from the game session.|`null`|
+|400|:arrow_right:|C|**Message To Host** <br> Message from Game Client to Game Host.|`string`|
+
