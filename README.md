@@ -83,3 +83,5 @@ Legend:
 |7|:arrow_right:|`HC`|**Direct Message** <br> Peer sends message to another peer or to a group of peers.|object: `{"peerIds": [integer, ...], "data": string}`|
 |8|:arrow_right:|`HC`|**Outgoing Synchronized Event** <br> Synchronized event will be broadcasted to ALL peers, including the sender of this event. All peers are guaranteed to receive synchronized events in the same order except for cases where peer's messages were discarded due to poor connection (message queue overflow).|`string`|
 |9|:arrow_left:|`HC`|**Incoming Synchronized Event**|object: `{"eventId": integer, "peerId": integer, "data": string}`|
+|101|:arrow_left:|H|**Client Joined Game** <br> Game Host receives this message when a new client joined the game. Payload is the `peerId` of new client.| `integer`|
+|102|:arrow_left:|H|**Client Left Game** <br> Game Host receives this message when client disconnects from the game session. Payload is the `peerId` of new client.|`integer`|
